@@ -15,10 +15,15 @@
 ## ⚡ Key Highlights
 
 - **🔒 Accountless Private Circles**: Create or join via display name & a 6-character invite code.
+
 - **🚨 230px One-Tap Lantern Button**: Large, pulsing button for tactile emergency signal dispatch.
+
 - **📱 Full-Screen Emergency Overlay**: Room members get a full-screen alert with an **"I'm Here"** button.
+
 - **✅ Real-Time Acknowledgment**: Instant confirmation toasts sent back to the sender when help is on the way.
+
 - **⚡ Socket.io Broadcasting**: Sub-second room-based event synchronization across all devices.
+
 - **💾 Embedded Persistence**: SQLite via `better-sqlite3` with WAL mode & zero configuration.
 
 ---
