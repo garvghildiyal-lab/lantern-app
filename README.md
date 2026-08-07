@@ -1,11 +1,11 @@
-# 🏮 Lantern — One-Tap Silent Help Signal
+# 🏮 Lantern — One-Tap Silent Help-Signal App
 
 > **Instant emergency alert app for private Circles.**  
 > No accounts required. One tap alerts your entire Circle in real time.
 
 <br>
 
-🌐 **Live App**: [https://app-2aa9-3000.prg1.zerops.app/](https://app-2aa9-3000.prg1.zerops.app/)  
+🌐 **Live Deployment App**: [https://app-2aa9-3000.prg1.zerops.app/](https://app-2aa9-3000.prg1.zerops.app/)  
 📦 **Repository**: [github.com/garvghildiyal-lab/lantern-app](https://github.com/garvghildiyal-lab/lantern-app)
 
 ---
@@ -20,6 +20,15 @@
 - **✅ Real-Time Acknowledgment**: Instant confirmation toasts sent back to the sender when help is on the way.
 - **⚡ Socket.io Broadcasting**: Sub-second room-based event synchronization across all devices.
 - **💾 Embedded Persistence**: SQLite via `better-sqlite3` with WAL mode & zero configuration.
+
+---
+
+<br>
+
+## 🌐 Live App Link
+
+Visit the application live on any desktop or mobile browser:  
+👉 **[https://app-2aa9-3000.prg1.zerops.app/](https://app-2aa9-3000.prg1.zerops.app/)**
 
 ---
 
@@ -53,7 +62,7 @@
 
 <br>
 
-## 💻 Local Quick Start
+## 💻 Quick Start & Running
 
 1. **Clone Repository**:
    ```bash
@@ -70,11 +79,11 @@
 
 <br>
 
-3. **Start Local Server**:
+3. **Start Application Server**:
    ```bash
    npm start
    ```
-   *Runs locally at `http://localhost:3000`.*
+   *Visit app at: `https://app-2aa9-3000.prg1.zerops.app/`.*
 
 <br>
 
