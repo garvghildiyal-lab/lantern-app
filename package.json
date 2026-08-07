@@ -1,11 +1,14 @@
 {
-    "name": "lantern-app",
-    "version": "1.0.0",
-    "main": "index.js",
-    "scripts": {
-        "start": "node index.js"
-    },
-    "dependencies": {
-        "express": "^4.22.2"
-    }
+  "name": "lantern-app",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.8.1",
+    "express": "^4.22.2",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.3"
+  }
 }

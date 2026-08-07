@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Lantern — Silent Help Signal</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Socket.io client -->
+  <script src="/socket.io/socket.io.js"></script>
+
+  <style>
+    :root {
+      --bg-dark: #0A0C10;
+      --bg-card: rgba(22, 27, 38, 0.7);
+      --border-card: rgba(245, 158, 11, 0.15);
+      --amber-500: #F59E0B;
+      --amber-600: #D97706;
+      --amber-400: #FBBF24;
+      --orange-600: #EA580C;
+      --red-500: #EF4444;
+      --text-main: #F3F4F6;
+      --text-muted: #9CA3AF;
+      --radius-lg: 20px;
+      --radius-btn: 9999px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 50% 20%, rgba(245, 158, 11, 0.08) 0%, transparent 60%),
+        radial-gradient(circle at 50% 80%, rgba(234, 88, 12, 0.05) 0%, transparent 50%);
+      color: var(--text-main);
+      min-height: 100vh;
+      min-height: -webkit-fill-available;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      overflow-x: hidden;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 440px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0 auto;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* HEADER */
+    .brand-header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .brand-title {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #FDE68A 0%, #F59E0B 50%, #D97706 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      fill: var(--amber-500);
+      filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.6));
+    }
+
+    .brand-tagline {
+      color: var(--text-muted);
+      font-size: 14px;
+      font-weight: 500;
+      margin-top: 6px;
+    }
+
+    /* SETUP SCREEN */
+    .setup-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      width: 100%;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .tab-switcher {
+      display: flex;
+      background: rgba(10, 12, 16, 0.6);
+      padding: 4px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 10px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn.active {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--amber-400);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 14px 16px;
+      background: rgba(10, 12, 16, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      color: #FFF;
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-input:focus {
+      border-color: var(--amber-500);
+      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 15px;
+      background: linear-gradient(135deg, var(--amber-500), var(--orange-600));
+      color: #000;
+      font-weight: 700;
+      font-size: 16px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      margin-top: 8px;
+    }
+
+    .btn-submit:active {
+      transform: scale(0.98);
+    }
+
+    /* HOME SCREEN (ACTIVE LANTERN) */
+    .home-header {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-card);
+      border-radius: 16px;
+      padding: 12px 16px;
+      margin-bottom: 24px;
+    }
+
+    .circle-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .circle-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .circle-invite {
+      font-size: 12px;
+      color: var(--amber-400);
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 2px;
+    }
+
+    .btn-leave {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    /* LANTERN BUTTON CONTAINER */
+    .lantern-stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 30px 0;
+      position: relative;
+    }
+
+    /* BIG GLOWING PULSING BUTTON */
+    .lantern-btn {
+      width: 230px;
+      height: 230px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #FDE68A 0%, #F59E0B 45%, #D97706 75%, #B45309 100%);
+      border: 4px solid rgba(254, 243, 199, 0.5);
+      color: #111827;
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 
+        0 0 35px rgba(245, 158, 11, 0.5),
+        0 0 70px rgba(245, 158, 11, 0.25),
+        inset 0 -8px 16px rgba(0, 0, 0, 0.3);
+      animation: pulse-glow 3s infinite ease-in-out;
+      transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.15s ease;
+      position: relative;
+      user-select: none;
+      touch-action: manipulation;
+    }
+
+    .lantern-btn:active {
+      transform: scale(0.93);
+      box-shadow: 
+        0 0 50px rgba(245, 158, 11, 0.8),
+        0 0 100px rgba(234, 88, 12, 0.6),
+        inset 0 4px 12px rgba(0, 0, 0, 0.5);
+    }
+
+    .lantern-btn-icon {
+      width: 52px;
+      height: 52px;
+      fill: #111827;
+      margin-bottom: 8px;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% {
+        box-shadow: 
+          0 0 35px rgba(245, 158, 11, 0.5),
+          0 0 70px rgba(245, 158, 11, 0.25),
+          inset 0 -8px 16px rgba(0, 0, 0, 0.3);
+        transform: scale(1);
+      }
+      50% {
+        box-shadow: 
+          0 0 55px rgba(245, 158, 11, 0.75),
+          0 0 110px rgba(245, 158, 11, 0.4),
+          inset 0 -8px 16px rgba(0, 0, 0, 0.3);
+        transform: scale(1.02);
+      }
+    }
+
+    /* CONFIRMATION TOAST */
+    .sent-confirmation {
+      position: absolute;
+      top: -50px;
+      background: rgba(16, 185, 129, 0.9);
+      color: #FFF;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 10px 20px;
+      border-radius: 9999px;
+      box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      animation: pop-in 0.3s ease;
+    }
+
+    @keyframes pop-in {
+      from { transform: translateY(10px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    /* SIGNALS FEED CARD */
+    .signals-card {
+      width: 100%;
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      margin-top: 10px;
+    }
+
+    .signals-header {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .signal-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px;
+      background: rgba(10, 12, 16, 0.6);
+      border-radius: 12px;
+      border-left: 4px solid var(--amber-500);
+      margin-bottom: 8px;
+    }
+
+    .signal-item.acknowledged {
+      border-left-color: #10B981;
+      opacity: 0.8;
+    }
+
+    .signal-sender {
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .signal-time {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .signal-status {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+
+    .status-active {
+      background: rgba(239, 68, 68, 0.2);
+      color: var(--red-500);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+
+    .status-ack {
+      background: rgba(16, 185, 129, 0.2);
+      color: #10B981;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+
+    .btn-ack {
+      background: rgba(16, 185, 129, 0.2);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: #10B981;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    /* FULL-SCREEN EMERGENCY OVERLAY */
+    .emergency-overlay {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at 50% 40%, rgba(239, 68, 68, 0.98) 0%, rgba(15, 17, 26, 0.98) 90%);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+      animation: alert-pulse-bg 1.2s infinite alternate ease-in-out;
+    }
+
+    @keyframes alert-pulse-bg {
+      0% { background: radial-gradient(circle at 50% 40%, rgba(239, 68, 68, 0.98) 0%, rgba(15, 17, 26, 0.98) 90%); }
+      100% { background: radial-gradient(circle at 50% 40%, rgba(245, 158, 11, 0.98) 0%, rgba(15, 17, 26, 0.98) 90%); }
+    }
+
+    .alert-beacon-icon {
+      width: 90px;
+      height: 90px;
+      fill: #FFF;
+      filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.8));
+      animation: beacon-bounce 0.8s infinite alternate cubic-bezier(0.36, 0, 0.66, -0.56);
+      margin-bottom: 24px;
+    }
+
+    @keyframes beacon-bounce {
+      from { transform: scale(1); }
+      to { transform: scale(1.18); }
+    }
+
+    .alert-title {
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #FEF08A;
+      margin-bottom: 12px;
+    }
+
+    .alert-sender {
+      font-size: 34px;
+      font-weight: 900;
+      color: #FFFFFF;
+      margin-bottom: 12px;
+      line-height: 1.2;
+      text-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    .alert-subtitle {
+      font-size: 16px;
+      color: rgba(255, 255, 255, 0.9);
+      margin-bottom: 40px;
+      font-weight: 500;
+    }
+
+    .btn-im-here {
+      width: 100%;
+      max-width: 320px;
+      padding: 20px 32px;
+      background: #10B981;
+      color: #FFFFFF;
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      border: 3px solid rgba(255, 255, 255, 0.6);
+      border-radius: 9999px;
+      cursor: pointer;
+      box-shadow: 0 0 40px rgba(16, 185, 129, 0.8);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      touch-action: manipulation;
+    }
+
+    .btn-im-here:active {
+      transform: scale(0.94);
+      box-shadow: 0 0 60px rgba(16, 185, 129, 1);
+    }
+
+    /* ACKNOWLEDGMENT TOAST FOR SENDER */
+    .ack-sender-toast {
+      position: fixed;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 90%;
+      max-width: 420px;
+      background: linear-gradient(135deg, #059669, #10B981);
+      color: #FFFFFF;
+      padding: 16px 20px;
+      border-radius: 16px;
+      box-shadow: 0 15px 35px rgba(16, 185, 129, 0.5);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      animation: slide-down 0.4s ease;
+      cursor: pointer;
+    }
+
+    @keyframes slide-down {
+      from { transform: translate(-50%, -30px); opacity: 0; }
+      to { transform: translate(-50%, 0); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- BRAND HEADER -->
+    <div class="brand-header">
+      <div class="brand-title">
+        <svg class="brand-icon" viewBox="0 0 24 24">
+          <path d="M12 2C11.45 2 11 2.45 11 3V4.08C8.16 4.56 6 7.03 6 10V16L4 18V19H20V18L18 16V10C18 7.03 15.84 4.56 13 4.08V3C13 2.45 12.55 2 12 2ZM12 22C13.1 22 14 21.1 14 20H10C10 21.1 10.9 22 12 22Z"/>
+        </svg>
+        Lantern
+      </div>
+      <div class="brand-tagline">Silent help-signals for your Circle</div>
+    </div>
+
+    <!-- STATE 1: SETUP SCREEN (Create / Join Circle) -->
+    <div id="setup-screen" class="setup-card">
+      <div class="tab-switcher">
+        <button id="tab-create" class="tab-btn active" onclick="switchTab('create')">Create Circle</button>
+        <button id="tab-join" class="tab-btn" onclick="switchTab('join')">Join Circle</button>
+      </div>
+
+      <!-- CREATE CIRCLE FORM -->
+      <form id="create-form" onsubmit="handleCreateCircle(event)">
+        <div class="form-group">
+          <label class="form-label">Circle Name</label>
+          <input type="text" id="create-circle-name" class="form-input" placeholder="e.g. My Family, Dorm Crew" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Your Name</label>
+          <input type="text" id="create-user-name" class="form-input" placeholder="e.g. Alice" required>
+        </div>
+        <button type="submit" class="btn-submit">Create Private Circle</button>
+      </form>
+
+      <!-- JOIN CIRCLE FORM -->
+      <form id="join-form" class="hidden" onsubmit="handleJoinCircle(event)">
+        <div class="form-group">
+          <label class="form-label">6-Character Invite Code</label>
+          <input type="text" id="join-invite-code" class="form-input" placeholder="e.g. 550E23" maxlength="6" style="text-transform: uppercase; letter-spacing: 2px;" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Your Name</label>
+          <input type="text" id="join-user-name" class="form-input" placeholder="e.g. Bob" required>
+        </div>
+        <button type="submit" class="btn-submit">Join Circle</button>
+      </form>
+    </div>
+
+    <!-- STATE 2: HOME SCREEN (ACTIVE LANTERN BUTTON) -->
+    <div id="home-screen" class="hidden" style="width: 100%;">
+      
+      <!-- Circle Header Info -->
+      <div class="home-header">
+        <div class="circle-info">
+          <span id="display-circle-name" class="circle-name">My Circle</span>
+          <span id="display-invite-code" class="circle-invite" onclick="copyInviteCode()">
+            Invite: <strong id="invite-code-text">------</strong> 📋
+          </span>
+        </div>
+        <button class="btn-leave" onclick="leaveCircle()">Switch</button>
+      </div>
+
+      <!-- Center Lantern Stage -->
+      <div class="lantern-stage">
+        <div id="sent-toast" class="sent-confirmation hidden">
+          ✓ Signal Dispatched to Circle!
+        </div>
+
+        <button id="lantern-btn" class="lantern-btn" onclick="sendHelpSignal()">
+          <svg class="lantern-btn-icon" viewBox="0 0 24 24">
+            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+          </svg>
+          Lantern
+        </button>
+      </div>
+
+      <!-- Recent Signals Feed -->
+      <div class="signals-card">
+        <div class="signals-header">
+          <span>Circle Signals</span>
+          <span id="user-badge" style="color: var(--amber-400); text-transform: none;">👤 You</span>
+        </div>
+        <div id="signals-list">
+          <div style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 12px;">
+            No active signals. Tap Lantern if you need help.
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- FULL-SCREEN EMERGENCY ALERT OVERLAY (For Receivers) -->
+  <div id="emergency-overlay" class="emergency-overlay hidden">
+    <svg class="alert-beacon-icon" viewBox="0 0 24 24">
+      <path d="M12 2C11.45 2 11 2.45 11 3V4.08C8.16 4.56 6 7.03 6 10V16L4 18V19H20V18L18 16V10C18 7.03 15.84 4.56 13 4.08V3C13 2.45 12.55 2 12 2ZM12 22C13.1 22 14 21.1 14 20H10C10 21.1 10.9 22 12 22Z"/>
+    </svg>
+    <div class="alert-title">🚨 CIRCLE HELP SIGNAL 🚨</div>
+    <div id="overlay-sender-name" class="alert-sender">Someone</div>
+    <div class="alert-subtitle">Needs immediate assistance from your Circle!</div>
+    <button class="btn-im-here" onclick="handleImHereClick()">I'm Here</button>
+  </div>
+
+  <!-- ACKNOWLEDGMENT CONFIRMATION TOAST (For Signal Sender) -->
+  <div id="ack-toast" class="ack-sender-toast hidden" onclick="this.classList.add('hidden')">
+    <span style="font-size: 20px;">✅</span>
+    <span id="ack-toast-text">Someone acknowledged your help signal!</span>
+  </div>
+
+  <script>
+    let socket;
+    let currentCircle = null;
+    let currentOverlaySignalId = null;
+
+    // Check stored state on initialization
+    window.addEventListener('DOMContentLoaded', () => {
+      const stored = localStorage.getItem('lantern_circle');
+      if (stored) {
+        try {
+          currentCircle = JSON.parse(stored);
+          initHomeScreen();
+        } catch (e) {
+          localStorage.removeItem('lantern_circle');
+        }
+      }
+    });
+
+    function switchTab(tab) {
+      document.getElementById('tab-create').classList.toggle('active', tab === 'create');
+      document.getElementById('tab-join').classList.toggle('active', tab === 'join');
+      document.getElementById('create-form').classList.toggle('hidden', tab !== 'create');
+      document.getElementById('join-form').classList.toggle('hidden', tab !== 'join');
+    }
+
+    async function handleCreateCircle(e) {
+      e.preventDefault();
+      const name = document.getElementById('create-circle-name').value.trim();
+      const owner_name = document.getElementById('create-user-name').value.trim();
+
+      try {
+        const res = await fetch('/api/circles', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, owner_name })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to create circle');
+
+        currentCircle = {
+          circle_id: data.id,
+          circle_name: data.name,
+          invite_code: data.invite_code,
+          user_name: owner_name
+        };
+
+        localStorage.setItem('lantern_circle', JSON.stringify(currentCircle));
+        initHomeScreen();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    async function handleJoinCircle(e) {
+      e.preventDefault();
+      const invite_code = document.getElementById('join-invite-code').value.trim();
+      const name = document.getElementById('join-user-name').value.trim();
+
+      try {
+        const res = await fetch('/api/circles/join', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ invite_code, name })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to join circle');
+
+        currentCircle = {
+          circle_id: data.circle.id,
+          circle_name: data.circle.name,
+          invite_code: data.circle.invite_code,
+          user_name: name
+        };
+
+        localStorage.setItem('lantern_circle', JSON.stringify(currentCircle));
+        initHomeScreen();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    function initHomeScreen() {
+      document.getElementById('setup-screen').classList.add('hidden');
+      document.getElementById('home-screen').classList.remove('hidden');
+
+      document.getElementById('display-circle-name').innerText = currentCircle.circle_name;
+      document.getElementById('invite-code-text').innerText = currentCircle.invite_code;
+      document.getElementById('user-badge').innerText = `👤 ${currentCircle.user_name}`;
+
+      // Initialize Socket connection
+      connectSocket();
+
+      // Fetch initial signals list
+      loadSignals();
+    }
+
+    function connectSocket() {
+      if (socket) socket.disconnect();
+      socket = io();
+
+      socket.on('connect', () => {
+        socket.emit('join_circle', currentCircle.circle_id);
+      });
+
+      socket.on('signal:new', (newSignal) => {
+        loadSignals();
+
+        // If signal comes from someone else, show full-screen emergency overlay
+        if (newSignal.sender_name !== currentCircle.user_name) {
+          showEmergencyOverlay(newSignal);
+        }
+      });
+
+      socket.on('signal:acknowledged', (ackSignal) => {
+        loadSignals();
+
+        // If I sent this signal, show a confirmation toast that someone acknowledged it
+        if (ackSignal.sender_name === currentCircle.user_name && ackSignal.acknowledged_by) {
+          showAckConfirmationToast(ackSignal.acknowledged_by);
+        }
+      });
+    }
+
+    function showEmergencyOverlay(signal) {
+      currentOverlaySignalId = signal.id;
+      document.getElementById('overlay-sender-name').innerText = signal.sender_name;
+      document.getElementById('emergency-overlay').classList.remove('hidden');
+
+      if (navigator.vibrate) {
+        navigator.vibrate([200, 100, 200, 100, 400]);
+      }
+    }
+
+    async function handleImHereClick() {
+      if (!currentOverlaySignalId) return;
+
+      try {
+        await acknowledgeSignal(currentOverlaySignalId);
+        dismissEmergencyOverlay();
+      } catch (err) {
+        console.error('Error acknowledging from overlay:', err);
+        dismissEmergencyOverlay();
+      }
+    }
+
+    function dismissEmergencyOverlay() {
+      document.getElementById('emergency-overlay').classList.add('hidden');
+      currentOverlaySignalId = null;
+    }
+
+    function showAckConfirmationToast(ackBy) {
+      const toast = document.getElementById('ack-toast');
+      document.getElementById('ack-toast-text').innerText = `${ackBy} acknowledged your signal! Help is on the way.`;
+      toast.classList.remove('hidden');
+
+      if (navigator.vibrate) {
+        navigator.vibrate([150, 50, 150]);
+      }
+
+      setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 5000);
+    }
+
+    async function sendHelpSignal() {
+      if (navigator.vibrate) {
+        navigator.vibrate([100, 50, 100]);
+      }
+
+      const toast = document.getElementById('sent-toast');
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 2500);
+
+      try {
+        await fetch('/api/signals', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            circle_id: currentCircle.circle_id,
+            sender_name: currentCircle.user_name
+          })
+        });
+        loadSignals();
+      } catch (err) {
+        console.error('Error sending signal:', err);
+      }
+    }
+
+    async function acknowledgeSignal(signalId) {
+      try {
+        await fetch(`/api/signals/${signalId}/acknowledge`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ acknowledged_by: currentCircle.user_name })
+        });
+        loadSignals();
+      } catch (err) {
+        console.error('Error acknowledging signal:', err);
+      }
+    }
+
+    async function loadSignals() {
+      try {
+        const res = await fetch(`/api/circles/${currentCircle.circle_id}/signals`);
+        const signals = await res.json();
+        const container = document.getElementById('signals-list');
+
+        if (!signals || signals.length === 0) {
+          container.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 12px;">No active signals. Tap Lantern if you need help.</div>`;
+          return;
+        }
+
+        container.innerHTML = signals.map(s => {
+          const isAck = s.status === 'acknowledged';
+          const time = new Date(s.created_at + ' UTC').toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+          return `
+            <div class="signal-item ${isAck ? 'acknowledged' : ''}">
+              <div>
+                <div class="signal-sender">🚨 ${escapeHtml(s.sender_name)}</div>
+                <div class="signal-time">${time} ${isAck ? `• Ack'd by ${escapeHtml(s.acknowledged_by)}` : ''}</div>
+              </div>
+              <div>
+                ${!isAck && s.sender_name !== currentCircle.user_name ? 
+                  `<button class="btn-ack" onclick="acknowledgeSignal(${s.id})">Acknowledge</button>` :
+                  `<span class="signal-status ${isAck ? 'status-ack' : 'status-active'}">${isAck ? 'ACKNOWLEDGED' : 'ACTIVE'}</span>`
+                }
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch (err) {
+        console.error('Error loading signals:', err);
+      }
+    }
+
+    function copyInviteCode() {
+      navigator.clipboard.writeText(currentCircle.invite_code);
+      alert(`Invite code copied: ${currentCircle.invite_code}`);
+    }
+
+    function leaveCircle() {
+      if (confirm('Switch or leave current circle?')) {
+        localStorage.removeItem('lantern_circle');
+        location.reload();
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/[&<>"']/g, function(m) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+      });
+    }
+  </script>
+</body>
+</html>

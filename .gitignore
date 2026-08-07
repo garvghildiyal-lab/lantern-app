@@ -1,0 +1,6 @@
+node_modules
+package-lock.json
+lantern.db
+lantern.db-journal
+lantern.db-wal
+.zerops
