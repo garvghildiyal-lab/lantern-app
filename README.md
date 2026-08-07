@@ -3,6 +3,8 @@
 > **Instant emergency alert app for private Circles.**  
 > No accounts, no password clutter — just a single tap to alert everyone in your Circle in real time.
 
+🌐 **Live Deployment URL**: [https://app-2aa9-3000.prg1.zerops.app/](https://app-2aa9-3000.prg1.zerops.app/)
+
 ---
 
 ## ⚡ Overview
@@ -20,6 +22,13 @@
 - **⚡ Real-Time Socket.io Sync**: Instant room-based websocket event broadcasting for new signals and acknowledgments.
 - **💾 Embedded Storage**: Powered by `better-sqlite3` with WAL mode for concurrency and zero external database setup.
 - **🚀 Zerops Native**: Pre-configured for automated deployment on Zerops via `zerops.yml`.
+
+---
+
+## 🌐 Live Demo & Deployment
+
+Visit the live app on any browser or mobile phone:  
+👉 **[https://app-2aa9-3000.prg1.zerops.app/](https://app-2aa9-3000.prg1.zerops.app/)**
 
 ---
 
