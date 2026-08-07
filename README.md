@@ -1,98 +1,103 @@
-# 🏮 Lantern — One-Tap Silent Help-Signal App
+# 🏮 Lantern — One-Tap Silent Help Signal
 
 > **Instant emergency alert app for private Circles.**  
-> No accounts, no password clutter — just a single tap to alert everyone in your Circle in real time.
+> No accounts required. One tap alerts your entire Circle in real time.
 
-🌐 **Live Deployment URL**: [https://app-2aa9-3000.prg1.zerops.app/](https://app-2aa9-3000.prg1.zerops.app/)
+<br>
 
----
-
-## ⚡ Overview
-
-**Lantern** is a lightweight, mobile-first silent safety signal application designed for families, dorm mates, and private groups. Users create or join a private Circle using a 6-character invite code. When someone needs urgent assistance, a single tap on the glowing **Lantern** button dispatches a real-time signal to all Circle members simultaneously.
+🌐 **Live App**: [https://app-2aa9-3000.prg1.zerops.app/](https://app-2aa9-3000.prg1.zerops.app/)  
+📦 **Repository**: [github.com/garvghildiyal-lab/lantern-app](https://github.com/garvghildiyal-lab/lantern-app)
 
 ---
 
-## ✨ Features
+<br>
 
-- **🔒 Accountless Private Circles**: Create or join circles instantly using display names and short invite codes (e.g., `550E23`).
-- **🚨 One-Tap Alert Button**: Large, pulsing 230px button centered on screen for fast, tactile emergency signal dispatch.
-- **📱 Full-Screen Receiver Overlay**: When a signal is sent, all members receive a full-screen, pulsing red emergency overlay with an **"I'm Here"** button.
-- **✅ Real-Time Acknowledgment**: When a member taps "I'm Here", the sender receives an instant notification that help is on the way.
-- **⚡ Real-Time Socket.io Sync**: Instant room-based websocket event broadcasting for new signals and acknowledgments.
-- **💾 Embedded Storage**: Powered by `better-sqlite3` with WAL mode for concurrency and zero external database setup.
-- **🚀 Zerops Native**: Pre-configured for automated deployment on Zerops via `zerops.yml`.
+## ⚡ Key Highlights
 
----
-
-## 🌐 Live Demo & Deployment
-
-Visit the live app on any browser or mobile phone:  
-👉 **[https://app-2aa9-3000.prg1.zerops.app/](https://app-2aa9-3000.prg1.zerops.app/)**
+- **🔒 Accountless Private Circles**: Create or join via display name & a 6-character invite code.
+- **🚨 230px One-Tap Lantern Button**: Large, pulsing button for tactile emergency signal dispatch.
+- **📱 Full-Screen Emergency Overlay**: Room members get a full-screen alert with an **"I'm Here"** button.
+- **✅ Real-Time Acknowledgment**: Instant confirmation toasts sent back to the sender when help is on the way.
+- **⚡ Socket.io Broadcasting**: Sub-second room-based event synchronization across all devices.
+- **💾 Embedded Persistence**: SQLite via `better-sqlite3` with WAL mode & zero configuration.
 
 ---
+
+<br>
 
 ## 🛠️ Tech Stack
 
-| Layer | Technology |
-| :--- | :--- |
-| **Backend** | Node.js (v20), Express.js |
-| **Real-time Engine** | Socket.io (Room-based broadcasting) |
-| **Database** | SQLite via `better-sqlite3` |
-| **Frontend** | Vanilla HTML5 / Modern CSS3 (Glassmorphism & CSS Animations) |
-| **Deployment** | Zerops PaaS (`zcli`) |
+- **Backend**: Node.js 20 & Express.js
+- **Real-Time**: Socket.io (Room-based events)
+- **Database**: SQLite (`better-sqlite3`)
+- **Frontend**: Mobile-first Vanilla HTML5, CSS3 & JS
+- **Deployment**: Zerops PaaS via ZCP
 
 ---
+
+<br>
 
 ## 🚀 API Endpoint Reference
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `GET` | `/health` | Health check endpoint (Returns `200 "ok"`) |
-| `POST` | `/api/circles` | Body: `{ name, owner_name }` — Creates a circle & generates invite code |
-| `POST` | `/api/circles/join` | Body: `{ invite_code, name }` — Joins an existing circle |
+| `GET` | `/health` | Service health check (`200 "ok"`) |
+| `POST` | `/api/circles` | `{ name, owner_name }` $\rightarrow$ Creates circle & generates invite code |
+| `POST` | `/api/circles/join` | `{ invite_code, name }` $\rightarrow$ Joins existing circle |
 | `GET` | `/api/circles/:id/members` | Returns member list for a circle |
-| `POST` | `/api/signals` | Body: `{ circle_id, sender_name }` — Dispatches active signal & broadcasts `signal:new` |
-| `POST` | `/api/signals/:id/acknowledge` | Body: `{ acknowledged_by }` — Acknowledges signal & broadcasts `signal:acknowledged` |
+| `POST` | `/api/signals` | `{ circle_id, sender_name }` $\rightarrow$ Dispatches signal & broadcasts `signal:new` |
+| `POST` | `/api/signals/:id/acknowledge` | `{ acknowledged_by }` $\rightarrow$ Acknowledges & broadcasts `signal:acknowledged` |
 | `GET` | `/api/circles/:id/signals` | Returns recent signals for a circle |
 
 ---
 
+<br>
+
 ## 💻 Local Quick Start
 
-1. **Clone the repository**:
+1. **Clone Repository**:
    ```bash
    git clone https://github.com/garvghildiyal-lab/lantern-app.git
    cd lantern-app
    ```
 
-2. **Install dependencies**:
+<br>
+
+2. **Install Dependencies**:
    ```bash
    npm install
    ```
 
-3. **Start the server**:
+<br>
+
+3. **Start Local Server**:
    ```bash
    npm start
    ```
-   *The app will run locally at `http://localhost:3000`.*
+   *Runs locally at `http://localhost:3000`.*
 
-4. **Run multi-client real-time socket test**:
+<br>
+
+4. **Run Real-Time Socket Test**:
    ```bash
    node test_socket.js
    ```
 
 ---
 
+<br>
+
 ## ☁️ Deployment on Zerops
 
-Deploying to Zerops with the Zerops CLI (`zcli`):
+Deploy updates instantly using Zerops CLI:
 
 ```bash
 zcli push app
 ```
 
 ---
+
+<br>
 
 ## 📄 License
 
