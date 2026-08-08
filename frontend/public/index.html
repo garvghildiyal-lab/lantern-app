@@ -801,18 +801,20 @@
       }
     }
 
-    // 3 & 4. Oscillator connected to GainNode, Gain set > 0, Gain connected to destination, with console logging
+    // 3 & 4. Oscillator connected to GainNode, Gain set > 0 (0.4 constant), Gain connected to destination, with console logging
     function playSingleOscillator(ctx, freq, durationSec, startTime) {
       try {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
 
-        osc.type = 'sine';
+        // 'sawtooth' waveform produces rich, loud emergency beep harmonics audible on all speakers
+        osc.type = 'sawtooth';
         osc.frequency.setValueAtTime(freq, startTime);
 
-        // Gain configuration: Non-zero gain (0.5) connected to destination
-        gain.gain.setValueAtTime(0.5, startTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, startTime + durationSec);
+        // Constant gain 0.4 across full duration (prevents instant exponential silence drop)
+        gain.gain.setValueAtTime(0.4, startTime);
+        gain.gain.setValueAtTime(0.4, startTime + durationSec - 0.01);
+        gain.gain.linearRampToValueAtTime(0.001, startTime + durationSec);
 
         osc.connect(gain);
         gain.connect(ctx.destination);
