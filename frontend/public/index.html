@@ -694,15 +694,20 @@
   </div>
 
   <!-- FULL-SCREEN EMERGENCY ALERT OVERLAY (For Receivers) -->
-  <div id="emergency-overlay" class="emergency-overlay hidden">
+  <div id="emergency-overlay" class="emergency-overlay hidden" onclick="unlockAudioAndPlay()">
     <svg class="alert-beacon-icon" viewBox="0 0 24 24">
       <path d="M12 2C11.45 2 11 2.45 11 3V4.08C8.16 4.56 6 7.03 6 10V16L4 18V19H20V18L18 16V10C18 7.03 15.84 4.56 13 4.08V3C13 2.45 12.55 2 12 2ZM12 22C13.1 22 14 21.1 14 20H10C10 21.1 10.9 22 12 22Z"/>
     </svg>
     <div class="alert-title">🚨 CIRCLE HELP SIGNAL 🚨</div>
     <div id="overlay-sender-name" class="alert-sender">Someone</div>
     <div class="alert-subtitle">Needs immediate assistance from your Circle!</div>
-    <button class="btn-im-here" onclick="handleImHereClick()">I'm Here</button>
-    <button class="btn-silence" onclick="stopSOSAlarm()">🔇 Silence Alarm</button>
+    
+    <button id="overlay-unmute-btn" class="btn-im-here" style="background: linear-gradient(135deg, #EF4444, #F59E0B); border-color: #FEF08A; margin-bottom: 14px; animation: pulse-sound-alarm 0.8s infinite alternate;" onclick="unlockAudioAndPlay(); event.stopPropagation();">
+      🔊 TAP TO PLAY ALARM SIREN 🚨
+    </button>
+    
+    <button class="btn-im-here" onclick="handleImHereClick(); event.stopPropagation();">I'm Here</button>
+    <button class="btn-silence" onclick="stopSOSAlarm(); event.stopPropagation();">🔇 Silence Alarm</button>
   </div>
 
   <!-- ACKNOWLEDGMENT CONFIRMATION TOAST (For Signal Sender) -->
@@ -798,6 +803,8 @@
       return 'data:audio/wav;base64,' + btoa(binary);
     }
 
+    let isAudioUnlocked = false;
+
     function initAudio() {
       if (!sosAudio) {
         try {
@@ -819,16 +826,28 @@
       }
     }
 
-    // Attach global user interaction listeners to unlock audio
-    ['click', 'touchstart', 'keydown'].forEach(evt => {
-      document.addEventListener(evt, () => {
-        initAudio();
-        if (isSOSPlaying && !isAudioMuted && sosAudio) {
-          sosAudio.play().then(() => {
-            document.getElementById('audio-unlock-banner').classList.add('hidden');
+    function prewarmAudio() {
+      initAudio();
+      if (!isAudioUnlocked && sosAudio) {
+        const p = sosAudio.play();
+        if (p !== undefined) {
+          p.then(() => {
+            isAudioUnlocked = true;
+            if (!isSOSPlaying) {
+              sosAudio.pause();
+              sosAudio.currentTime = 0;
+            }
           }).catch(() => {});
         }
-      }, { passive: true });
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(() => {});
+      }
+    }
+
+    // Attach global user interaction listeners to prewarm & unlock audio
+    ['click', 'touchstart', 'pointerdown', 'keydown'].forEach(evt => {
+      document.addEventListener(evt, prewarmAudio, { passive: true });
     });
 
     function playSingleBeep(frequency, durationMs) {
@@ -884,7 +903,7 @@
       isSOSPlaying = true;
       updateSoundUI();
 
-      initAudio();
+      prewarmAudio();
 
       // 1. Play HTML5 Audio element (Base64 WAV SOS Siren)
       if (sosAudio && !isAudioMuted) {
@@ -938,7 +957,7 @@
 
     function testSirenSound() {
       isAudioMuted = false;
-      initAudio();
+      prewarmAudio();
       if (sosAudio) {
         sosAudio.currentTime = 0;
         sosAudio.play().catch(() => {});
@@ -951,8 +970,8 @@
     }
 
     function unlockAudioAndPlay() {
-      initAudio();
-      if (isSOSPlaying && sosAudio) {
+      prewarmAudio();
+      if (sosAudio && !isAudioMuted) {
         sosAudio.play().then(() => {
           const banner = document.getElementById('audio-unlock-banner');
           if (banner) banner.classList.add('hidden');
