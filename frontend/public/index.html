@@ -81,6 +81,17 @@
         <button id="setup-mute-btn" type="button" class="btn-sound hidden" onclick="toggleMutePreference()">🔊 Sound On</button>
         <button type="button" class="btn-sound" onclick="testSingleBeepSound()">🔊 Test Sound</button>
       </div>
+
+      <!-- RECENT CIRCLES SECTION -->
+      <div id="recent-circles-container" class="hidden" style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 16px;">
+        <div class="form-label" style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+          <span>⚡ Recent Circles</span>
+          <span style="font-size: 11px; text-transform: none; font-weight: 500; color: var(--text-muted);">Quick Re-join</span>
+        </div>
+        <div id="recent-circles-list" style="display: flex; flex-direction: column; gap: 8px;">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
     </div>
 
     <!-- STATE 2: HOME SCREEN (ACTIVE LANTERN BUTTON) -->
@@ -405,6 +416,7 @@
     window.addEventListener('DOMContentLoaded', () => {
       initTheme();
       updateAudioUI();
+      renderRecentCircles();
       if (isAudioGranted()) {
         getAudioContext();
       }
@@ -419,6 +431,91 @@
         }
       }
     });
+
+    function saveToRecentCircles(circleObj) {
+      if (!circleObj || !circleObj.circle_id) return;
+      let recent = [];
+      try {
+        recent = JSON.parse(localStorage.getItem('lantern_recent_circles') || '[]');
+      } catch (e) {
+        recent = [];
+      }
+
+      recent = recent.filter(item => item.circle_id !== circleObj.circle_id && item.invite_code !== circleObj.invite_code);
+      recent.unshift({
+        circle_id: circleObj.circle_id,
+        circle_name: circleObj.circle_name,
+        invite_code: circleObj.invite_code,
+        user_name: circleObj.user_name,
+        last_active_at: Date.now()
+      });
+
+      if (recent.length > 5) recent = recent.slice(0, 5);
+      localStorage.setItem('lantern_recent_circles', JSON.stringify(recent));
+      renderRecentCircles();
+    }
+
+    function renderRecentCircles() {
+      const container = document.getElementById('recent-circles-container');
+      const listEl = document.getElementById('recent-circles-list');
+      if (!container || !listEl) return;
+
+      let recent = [];
+      try {
+        recent = JSON.parse(localStorage.getItem('lantern_recent_circles') || '[]');
+      } catch (e) {
+        recent = [];
+      }
+
+      if (recent.length === 0) {
+        container.classList.add('hidden');
+        return;
+      }
+
+      container.classList.remove('hidden');
+      listEl.innerHTML = recent.map((c, idx) => `
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--tab-bg); border: 1px solid var(--border-color); border-radius: 12px;">
+          <div>
+            <div style="font-weight: 700; font-size: 14px; color: var(--text-color);">${escapeHtml(c.circle_name)}</div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+              As: <strong>${escapeHtml(c.user_name)}</strong> • Code: <code style="color: var(--accent-light); font-weight: 700;">${escapeHtml(c.invite_code)}</code>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <button type="button" class="btn-sound" onclick="quickRejoinCircle(${idx})" style="padding: 5px 10px; font-size: 11px;">
+              ⚡ Join
+            </button>
+            <button type="button" onclick="removeFromRecentCircles(${idx})" style="background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; font-size: 14px;" title="Remove from list">
+              ✕
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function quickRejoinCircle(idx) {
+      let recent = [];
+      try {
+        recent = JSON.parse(localStorage.getItem('lantern_recent_circles') || '[]');
+      } catch (e) { recent = []; }
+      const selected = recent[idx];
+      if (selected) {
+        currentCircle = selected;
+        localStorage.setItem('lantern_circle', JSON.stringify(currentCircle));
+        saveToRecentCircles(currentCircle);
+        initHomeScreen();
+      }
+    }
+
+    function removeFromRecentCircles(idx) {
+      let recent = [];
+      try {
+        recent = JSON.parse(localStorage.getItem('lantern_recent_circles') || '[]');
+      } catch (e) { recent = []; }
+      recent.splice(idx, 1);
+      localStorage.setItem('lantern_recent_circles', JSON.stringify(recent));
+      renderRecentCircles();
+    }
 
     function switchTab(tab) {
       document.getElementById('tab-create').classList.toggle('active', tab === 'create');
@@ -449,6 +546,7 @@
         };
 
         localStorage.setItem('lantern_circle', JSON.stringify(currentCircle));
+        saveToRecentCircles(currentCircle);
         initHomeScreen();
       } catch (err) {
         alert(err.message);
@@ -477,6 +575,7 @@
         };
 
         localStorage.setItem('lantern_circle', JSON.stringify(currentCircle));
+        saveToRecentCircles(currentCircle);
         initHomeScreen();
       } catch (err) {
         alert(err.message);
@@ -828,9 +927,15 @@
     }
 
     function leaveCircle() {
-      if (confirm('Switch or leave current circle?')) {
+      if (confirm('Switch to another circle? Your current circle will stay saved in your Recent Circles list for quick 1-tap rejoining.')) {
+        if (currentCircle) {
+          saveToRecentCircles(currentCircle);
+        }
         localStorage.removeItem('lantern_circle');
-        location.reload();
+        if (socket) socket.disconnect();
+        document.getElementById('home-screen').classList.add('hidden');
+        document.getElementById('setup-screen').classList.remove('hidden');
+        renderRecentCircles();
       }
     }
 
