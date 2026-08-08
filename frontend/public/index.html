@@ -512,6 +512,55 @@
       cursor: pointer;
     }
 
+    /* SOUND CONTROLS & SILENCE BUTTON */
+    .btn-sound {
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: var(--amber-400);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-sound.alarm-active {
+      background: rgba(239, 68, 68, 0.3);
+      border-color: rgba(239, 68, 68, 0.7);
+      color: #FCA5A5;
+      animation: pulse-sound-alarm 0.8s infinite alternate ease-in-out;
+    }
+
+    @keyframes pulse-sound-alarm {
+      0% { transform: scale(1); box-shadow: 0 0 8px rgba(239, 68, 68, 0.5); }
+      100% { transform: scale(1.06); box-shadow: 0 0 16px rgba(239, 68, 68, 0.9); }
+    }
+
+    .btn-silence {
+      margin-top: 14px;
+      padding: 12px 28px;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1.5px solid rgba(255, 255, 255, 0.4);
+      color: #FFFFFF;
+      font-size: 15px;
+      font-weight: 700;
+      border-radius: 9999px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: transform 0.15s ease, background 0.2s ease;
+    }
+
+    .btn-silence:active {
+      transform: scale(0.95);
+      background: rgba(255, 255, 255, 0.3);
+    }
+
     @keyframes slide-down {
       from { transform: translate(-50%, -30px); opacity: 0; }
       to { transform: translate(-50%, 0); opacity: 1; }
@@ -578,7 +627,10 @@
             Invite: <strong id="invite-code-text">------</strong> 📋
           </span>
         </div>
-        <button class="btn-leave" onclick="leaveCircle()">Switch</button>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button id="sound-toggle-btn" class="btn-sound" onclick="toggleMute()">🔊 Sound On</button>
+          <button class="btn-leave" onclick="leaveCircle()">Switch</button>
+        </div>
       </div>
 
       <!-- Center Lantern Stage -->
@@ -621,6 +673,7 @@
     <div id="overlay-sender-name" class="alert-sender">Someone</div>
     <div class="alert-subtitle">Needs immediate assistance from your Circle!</div>
     <button class="btn-im-here" onclick="handleImHereClick()">I'm Here</button>
+    <button class="btn-silence" onclick="stopSOSAlarm()">🔇 Silence Alarm</button>
   </div>
 
   <!-- ACKNOWLEDGMENT CONFIRMATION TOAST (For Signal Sender) -->
@@ -633,6 +686,138 @@
     let socket;
     let currentCircle = null;
     let currentOverlaySignalId = null;
+
+    // Web Audio API emergency SOS siren engine
+    let audioCtx = null;
+    let sosLoopTimer = null;
+    let isAudioMuted = false;
+    let isSOSPlaying = false;
+
+    function getAudioContext() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+          audioCtx = new AudioContextClass();
+        }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    function unlockAudio() {
+      getAudioContext();
+    }
+    document.addEventListener('click', unlockAudio, { once: true });
+    document.addEventListener('touchstart', unlockAudio, { once: true });
+
+    function playBeep(ctx, frequency, durationMs, startTime) {
+      if (isAudioMuted || !ctx) return;
+
+      try {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'sawtooth'; // Piercing alarming waveform
+
+        // Pitch modulation for siren sound
+        osc.frequency.setValueAtTime(frequency, startTime);
+        osc.frequency.exponentialRampToValueAtTime(frequency * 1.25, startTime + (durationMs / 1000));
+
+        // Volume envelope
+        gain.gain.setValueAtTime(0.001, startTime);
+        gain.gain.linearRampToValueAtTime(0.4, startTime + 0.01);
+        gain.gain.setValueAtTime(0.4, startTime + (durationMs / 1000) - 0.01);
+        gain.gain.linearRampToValueAtTime(0.001, startTime + (durationMs / 1000));
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(startTime);
+        osc.stop(startTime + (durationMs / 1000));
+      } catch (e) {
+        console.error('Audio play error:', e);
+      }
+    }
+
+    function playSOSSequence() {
+      const ctx = getAudioContext();
+      if (!ctx || isAudioMuted) return;
+
+      const now = ctx.currentTime + 0.05;
+      const dotDuration = 0.12;   // 120ms short dot
+      const dashDuration = 0.36;  // 360ms long dash
+      const intraGap = 0.08;      // gap inside letter
+      const letterGap = 0.22;     // gap between letters
+      const alarmFreq = 880;      // 880Hz emergency pitch
+
+      let time = now;
+
+      // 1. S (...): 3 dots
+      for (let i = 0; i < 3; i++) {
+        playBeep(ctx, alarmFreq, dotDuration * 1000, time);
+        time += dotDuration + intraGap;
+      }
+
+      time += letterGap;
+
+      // 2. O (---): 3 dashes with higher urgency pitch
+      for (let i = 0; i < 3; i++) {
+        playBeep(ctx, alarmFreq * 1.15, dashDuration * 1000, time);
+        time += dashDuration + intraGap;
+      }
+
+      time += letterGap;
+
+      // 3. S (...): 3 dots
+      for (let i = 0; i < 3; i++) {
+        playBeep(ctx, alarmFreq, dotDuration * 1000, time);
+        time += dotDuration + intraGap;
+      }
+    }
+
+    function startSOSAlarm() {
+      if (isSOSPlaying) return;
+      isSOSPlaying = true;
+      updateSoundUI();
+
+      getAudioContext();
+      playSOSSequence();
+
+      if (sosLoopTimer) clearInterval(sosLoopTimer);
+      sosLoopTimer = setInterval(() => {
+        if (isSOSPlaying && !isAudioMuted) {
+          playSOSSequence();
+        }
+      }, 2800);
+    }
+
+    function stopSOSAlarm() {
+      isSOSPlaying = false;
+      if (sosLoopTimer) {
+        clearInterval(sosLoopTimer);
+        sosLoopTimer = null;
+      }
+      updateSoundUI();
+    }
+
+    function toggleMute() {
+      isAudioMuted = !isAudioMuted;
+      if (isAudioMuted) {
+        stopSOSAlarm();
+      } else {
+        updateSoundUI();
+      }
+    }
+
+    function updateSoundUI() {
+      const btn = document.getElementById('sound-toggle-btn');
+      if (btn) {
+        btn.innerHTML = isAudioMuted ? '🔇 Muted' : (isSOSPlaying ? '🚨 SOS ALARM' : '🔊 Sound On');
+        btn.classList.toggle('alarm-active', isSOSPlaying && !isAudioMuted);
+      }
+    }
 
     // Check stored state on initialization
     window.addEventListener('DOMContentLoaded', () => {
@@ -736,6 +921,9 @@
       socket.on('signal:new', (newSignal) => {
         loadSignals();
 
+        // Play alarming SOS sound whenever an alert is created in the circle
+        startSOSAlarm();
+
         // If signal comes from someone else, show full-screen emergency overlay
         if (newSignal.sender_name !== currentCircle.user_name) {
           showEmergencyOverlay(newSignal);
@@ -744,6 +932,9 @@
 
       socket.on('signal:acknowledged', (ackSignal) => {
         loadSignals();
+
+        // Stop SOS alarm when signal is acknowledged
+        stopSOSAlarm();
 
         // If I sent this signal, show a confirmation toast that someone acknowledged it
         if (ackSignal.sender_name === currentCircle.user_name && ackSignal.acknowledged_by) {
@@ -777,6 +968,7 @@
     function dismissEmergencyOverlay() {
       document.getElementById('emergency-overlay').classList.add('hidden');
       currentOverlaySignalId = null;
+      stopSOSAlarm();
     }
 
     function showAckConfirmationToast(ackBy) {
@@ -797,6 +989,8 @@
       if (navigator.vibrate) {
         navigator.vibrate([100, 50, 100]);
       }
+
+      startSOSAlarm();
 
       const toast = document.getElementById('sent-toast');
       toast.classList.remove('hidden');
@@ -839,6 +1033,11 @@
         if (!signals || signals.length === 0) {
           container.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 12px;">No active signals. Tap Lantern if you need help.</div>`;
           return;
+        }
+
+        const hasActiveSignals = signals.some(s => s.status === 'active');
+        if (!hasActiveSignals) {
+          stopSOSAlarm();
         }
 
         container.innerHTML = signals.map(s => {

@@ -18,8 +18,8 @@ const port = process.env.PORT || 3000;
 
 app.use(express.json());
 
-// Serve static frontend assets from public directory
-app.use(express.static(path.join(__dirname, 'public')));
+// Serve static frontend assets from frontend/public directory
+app.use(express.static(path.join(__dirname, '..', 'frontend', 'public')));
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -198,7 +198,7 @@ app.get('/api/circles/:id/signals', (req, res) => {
 
 // Fallback to index.html for SPA single page routing
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, '..', 'frontend', 'public', 'index.html'));
 });
 
 // Socket.io connection handling & room management

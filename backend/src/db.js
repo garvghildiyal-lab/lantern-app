@@ -1,7 +1,7 @@
 const Database = require('better-sqlite3');
 const path = require('path');
 
-const dbPath = process.env.DB_PATH || path.join(__dirname, '..', 'lantern.db');
+const dbPath = process.env.DB_PATH || path.join(__dirname, '..', '..', 'lantern.db');
 const db = new Database(dbPath);
 
 // Enable foreign keys and WAL mode for better concurrency
