@@ -98,7 +98,8 @@
             Invite: <strong id="invite-code-text">------</strong> 📋
           </span>
         </div>
-        <div style="display: flex; gap: 8px; align-items: center;">
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+          <button id="home-theme-toggle-btn" class="btn-sound" onclick="toggleDarkLightTheme()" title="Toggle Light/Dark Theme">🌙 Dark</button>
           <button id="enable-audio-btn" class="btn-enable-alerts hidden" onclick="enableAudioAlerts()">🔔 Enable alerts</button>
           <button id="mute-toggle-btn" class="btn-sound hidden" onclick="toggleMutePreference()">🔊 Sound On</button>
           <button class="btn-sound" onclick="testSingleBeepSound()">🔊 Test Sound</button>
@@ -355,7 +356,7 @@
       }, { passive: true });
     });
 
-    // THEME SWITCHER LOGIC
+    // THEME SWITCHER LOGIC (Default: Light theme, Dark theme via [data-theme="dark"])
     function setTheme(themeName) {
       document.documentElement.setAttribute('data-theme', themeName);
       localStorage.setItem('lantern_theme', themeName);
@@ -374,16 +375,21 @@
       if (toggleBtn) {
         toggleBtn.innerHTML = (themeName === 'light') ? '🌙 Dark Mode' : '☀️ Light Mode';
       }
+
+      const homeBtn = document.getElementById('home-theme-toggle-btn');
+      if (homeBtn) {
+        homeBtn.innerHTML = (themeName === 'light') ? '🌙 Dark' : '☀️ Light';
+      }
     }
 
     function toggleDarkLightTheme() {
-      const currentTheme = localStorage.getItem('lantern_theme') || 'amber';
-      const newTheme = (currentTheme === 'light') ? 'amber' : 'light';
+      const currentTheme = localStorage.getItem('lantern_theme') || 'light';
+      const newTheme = (currentTheme === 'light') ? 'dark' : 'light';
       setTheme(newTheme);
     }
 
     function initTheme() {
-      const savedTheme = localStorage.getItem('lantern_theme') || 'amber';
+      const savedTheme = localStorage.getItem('lantern_theme') || 'light';
       setTheme(savedTheme);
     }
 
