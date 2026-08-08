@@ -1,4 +1,6 @@
-# 🏮 Lantern — One-Tap Silent Help-Signal App
+# <span style="color: #ffffff;"><font color="#ffffff"><b>🏮 Lantern — Silent Help Signal App</b></font></span>
+
+### <span style="color: #ffffff;"><font color="#ffffff"><b>One tap. Everyone knows. Someone shows up.</b></font></span>
 
 > **Instant emergency alert app for private Circles.**  
 > No accounts required. One tap alerts your entire Circle in real time.
@@ -12,7 +14,7 @@
 
 <br>
 
-## ⚡ Key Highlights
+## <span style="color: #ffffff;"><font color="#ffffff"><b>⚡ Key Highlights</b></font></span>
 
 - **🔒 Accountless Private Circles**: Create or join via display name & a 6-character invite code.
 
@@ -30,7 +32,7 @@
 
 <br>
 
-## 🌐 Live App Link
+## <span style="color: #ffffff;"><font color="#ffffff"><b>🌐 Live App Link</b></font></span>
 
 Visit the application live on any desktop or mobile browser:  
 👉 **[https://app-2aa9-3000.prg1.zerops.app/](https://app-2aa9-3000.prg1.zerops.app/)**
@@ -39,7 +41,7 @@ Visit the application live on any desktop or mobile browser:
 
 <br>
 
-## 🛠️ Tech Stack
+## <span style="color: #ffffff;"><font color="#ffffff"><b>🛠️ Tech Stack</b></font></span>
 
 - **Backend**: Node.js 20 & Express.js
 - **Real-Time**: Socket.io (Room-based events)
@@ -51,7 +53,7 @@ Visit the application live on any desktop or mobile browser:
 
 <br>
 
-## 🚀 API Endpoint Reference
+## <span style="color: #ffffff;"><font color="#ffffff"><b>🚀 API Endpoint Reference</b></font></span>
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
@@ -67,7 +69,7 @@ Visit the application live on any desktop or mobile browser:
 
 <br>
 
-## 💻 Quick Start & Running
+## <span style="color: #ffffff;"><font color="#ffffff"><b>💻 Quick Start & Running</b></font></span>
 
 1. **Clone Repository**:
    ```bash
@@ -101,7 +103,7 @@ Visit the application live on any desktop or mobile browser:
 
 <br>
 
-## ☁️ Deployment on Zerops
+## <span style="color: #ffffff;"><font color="#ffffff"><b>☁️ Deployment on Zerops</b></font></span>
 
 Deploy updates instantly using Zerops CLI:
 
@@ -113,6 +115,7 @@ zcli push app
 
 <br>
 
-## 📄 License
+## <span style="color: #ffffff;"><font color="#ffffff"><b>📄 License</b></font></span>
 
 MIT © 2026 Lantern Team
+
