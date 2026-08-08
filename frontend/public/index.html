@@ -886,15 +886,20 @@
 
       initAudio();
 
-      // 1. Play HTML5 Audio element
+      // 1. Play HTML5 Audio element (Base64 WAV SOS Siren)
       if (sosAudio && !isAudioMuted) {
         sosAudio.currentTime = 0;
-        sosAudio.play().then(() => {
-          document.getElementById('audio-unlock-banner').classList.add('hidden');
-        }).catch(err => {
-          console.warn('Audio playback waiting for tap:', err);
-          document.getElementById('audio-unlock-banner').classList.remove('hidden');
-        });
+        const playPromise = sosAudio.play();
+        if (playPromise !== undefined) {
+          playPromise.then(() => {
+            const banner = document.getElementById('audio-unlock-banner');
+            if (banner) banner.classList.add('hidden');
+          }).catch(err => {
+            console.warn('Audio playback waiting for tap gesture:', err);
+            const banner = document.getElementById('audio-unlock-banner');
+            if (banner) banner.classList.remove('hidden');
+          });
+        }
       }
 
       // 2. Play Web Audio pattern loop
@@ -917,7 +922,8 @@
         clearInterval(webAudioTimer);
         webAudioTimer = null;
       }
-      document.getElementById('audio-unlock-banner').classList.add('hidden');
+      const banner = document.getElementById('audio-unlock-banner');
+      if (banner) banner.classList.add('hidden');
       updateSoundUI();
     }
 
@@ -933,21 +939,23 @@
     function testSirenSound() {
       isAudioMuted = false;
       initAudio();
+      if (sosAudio) {
+        sosAudio.currentTime = 0;
+        sosAudio.play().catch(() => {});
+      }
       startSOSAlarm();
       setTimeout(() => {
-        if (confirm('Did you hear the SOS Siren? Click OK to stop test sound.')) {
-          stopSOSAlarm();
-        } else {
-          stopSOSAlarm();
-        }
-      }, 3000);
+        stopSOSAlarm();
+        alert('🚨 SOS Siren Test Complete! Sound engine is fully active.');
+      }, 4000);
     }
 
     function unlockAudioAndPlay() {
       initAudio();
       if (isSOSPlaying && sosAudio) {
         sosAudio.play().then(() => {
-          document.getElementById('audio-unlock-banner').classList.add('hidden');
+          const banner = document.getElementById('audio-unlock-banner');
+          if (banner) banner.classList.add('hidden');
         }).catch(() => {});
       }
     }
@@ -1175,11 +1183,6 @@
         if (!signals || signals.length === 0) {
           container.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 12px;">No active signals. Tap Lantern if you need help.</div>`;
           return;
-        }
-
-        const hasActiveSignals = signals.some(s => s.status === 'active');
-        if (!hasActiveSignals) {
-          stopSOSAlarm();
         }
 
         container.innerHTML = signals.map(s => {
