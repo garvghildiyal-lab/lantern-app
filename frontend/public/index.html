@@ -35,15 +35,11 @@
       </div>
       <div class="brand-tagline">Silent help-signals for your Circle</div>
 
-      <!-- THEME SWITCHER BAR WITH QUICK DARK/LIGHT TOGGLE -->
+      <!-- THEME SWITCHER BAR WITH ONLY 2 UI THEME OPTIONS (LIGHT & DARK) -->
       <div class="theme-bar">
-        <button id="theme-toggle-icon-btn" class="btn-theme-toggle" onclick="toggleDarkLightTheme()" title="Toggle Dark / Light Theme">☀️ Light Mode</button>
-        <span style="color: var(--text-muted); opacity: 0.5;">|</span>
-        <button class="theme-chip amber active" onclick="setTheme('amber')">🌙 Amber</button>
-        <button class="theme-chip emerald" onclick="setTheme('emerald')">🌿 Emerald</button>
-        <button class="theme-chip sapphire" onclick="setTheme('sapphire')">🌌 Sapphire</button>
-        <button class="theme-chip crimson" onclick="setTheme('crimson')">🔴 Crimson</button>
-        <button class="theme-chip light" onclick="setTheme('light')">☀️ Light</button>
+        <span class="theme-label">🎨 UI Theme:</span>
+        <button class="theme-chip light active" onclick="setTheme('light')">☀️ Light</button>
+        <button class="theme-chip dark" onclick="setTheme('dark')">🌙 Dark</button>
       </div>
     </div>
 
@@ -372,29 +368,25 @@
       }, { passive: true });
     });
 
-    // THEME SWITCHER LOGIC (Default: Light theme, Dark theme via [data-theme="dark"])
+    // THEME SWITCHER LOGIC (Strictly 2 Options: 'light' & 'dark')
     function setTheme(themeName) {
-      document.documentElement.setAttribute('data-theme', themeName);
-      localStorage.setItem('lantern_theme', themeName);
+      const validTheme = (themeName === 'dark') ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', validTheme);
+      localStorage.setItem('lantern_theme', validTheme);
 
       document.querySelectorAll('.theme-chip').forEach(btn => {
-        btn.classList.toggle('active', btn.classList.contains(themeName));
+        btn.classList.toggle('active', btn.classList.contains(validTheme));
       });
 
       const floatBtn = document.getElementById('floating-theme-toggle');
       if (floatBtn) {
-        floatBtn.innerHTML = (themeName === 'light') ? '🌙' : '☀️';
-        floatBtn.title = (themeName === 'light') ? 'Switch to Dark Mode' : 'Switch to Light Mode';
-      }
-
-      const toggleBtn = document.getElementById('theme-toggle-icon-btn');
-      if (toggleBtn) {
-        toggleBtn.innerHTML = (themeName === 'light') ? '🌙 Dark Mode' : '☀️ Light Mode';
+        floatBtn.innerHTML = (validTheme === 'light') ? '🌙' : '☀️';
+        floatBtn.title = (validTheme === 'light') ? 'Switch to Dark Mode' : 'Switch to Light Mode';
       }
 
       const homeBtn = document.getElementById('home-theme-toggle-btn');
       if (homeBtn) {
-        homeBtn.innerHTML = (themeName === 'light') ? '🌙 Dark' : '☀️ Light';
+        homeBtn.innerHTML = (validTheme === 'light') ? '🌙 Dark' : '☀️ Light';
       }
     }
 

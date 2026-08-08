@@ -1,10 +1,10 @@
 /* ==========================================
    CSS CUSTOM PROPERTIES / THEME DEFINITIONS
-   Light Theme (Default in :root) & Dark Theme ([data-theme="dark"])
+   Only 2 Options: Light Theme (:root) & Dark Theme ([data-theme="dark"])
    ========================================== */
 
 :root {
-  /* Light Theme (Default) */
+  /* 1. Light Theme (Default) */
   --bg-color: #F8FAFC;
   --bg-card: #FFFFFF;
   --border-color: rgba(217, 119, 6, 0.25);
@@ -27,7 +27,7 @@
 }
 
 [data-theme="dark"] {
-  /* Dark Theme */
+  /* 2. Dark Theme */
   --bg-color: #0A0C10;
   --bg-card: rgba(22, 27, 38, 0.75);
   --border-color: rgba(245, 158, 11, 0.2);
@@ -45,86 +45,6 @@
   --input-border: rgba(255, 255, 255, 0.1);
   --tab-bg: rgba(10, 12, 16, 0.6);
   --signal-item-bg: rgba(10, 12, 16, 0.6);
-}
-
-[data-theme="amber"] {
-  --bg-color: #0A0C10;
-  --bg-card: rgba(22, 27, 38, 0.75);
-  --border-color: rgba(245, 158, 11, 0.2);
-  --text-color: #F3F4F6;
-  --text-muted: #9CA3AF;
-  --accent-color: #F59E0B;
-  --accent-secondary: #D97706;
-  --accent-light: #FBBF24;
-  --orange-accent: #EA580C;
-  --red-accent: #EF4444;
-  --button-glow: rgba(245, 158, 11, 0.5);
-  --btn-gradient: radial-gradient(circle at 35% 35%, #FDE68A 0%, #F59E0B 45%, #D97706 75%, #B45309 100%);
-  --input-bg: rgba(10, 12, 16, 0.8);
-  --input-color: #FFFFFF;
-  --input-border: rgba(255, 255, 255, 0.1);
-  --tab-bg: rgba(10, 12, 16, 0.6);
-  --signal-item-bg: rgba(10, 12, 16, 0.6);
-}
-
-[data-theme="emerald"] {
-  --bg-color: #05130E;
-  --bg-card: rgba(12, 33, 25, 0.75);
-  --border-color: rgba(16, 185, 129, 0.25);
-  --text-color: #F0FDF4;
-  --text-muted: #86EFAC;
-  --accent-color: #10B981;
-  --accent-secondary: #059669;
-  --accent-light: #34D399;
-  --orange-accent: #047857;
-  --red-accent: #EF4444;
-  --button-glow: rgba(16, 185, 129, 0.5);
-  --btn-gradient: radial-gradient(circle at 35% 35%, #A7F3D0 0%, #10B981 45%, #059669 75%, #047857 100%);
-  --input-bg: rgba(5, 19, 14, 0.8);
-  --input-color: #FFFFFF;
-  --input-border: rgba(16, 185, 129, 0.2);
-  --tab-bg: rgba(5, 19, 14, 0.6);
-  --signal-item-bg: rgba(5, 19, 14, 0.6);
-}
-
-[data-theme="sapphire"] {
-  --bg-color: #070F26;
-  --bg-card: rgba(16, 27, 58, 0.75);
-  --border-color: rgba(59, 130, 246, 0.25);
-  --text-color: #EFF6FF;
-  --text-muted: #93C5FD;
-  --accent-color: #3B82F6;
-  --accent-secondary: #2563EB;
-  --accent-light: #60A5FA;
-  --orange-accent: #1D4ED8;
-  --red-accent: #EF4444;
-  --button-glow: rgba(59, 130, 246, 0.5);
-  --btn-gradient: radial-gradient(circle at 35% 35%, #BFDBFE 0%, #3B82F6 45%, #2563EB 75%, #1D4ED8 100%);
-  --input-bg: rgba(7, 15, 38, 0.8);
-  --input-color: #FFFFFF;
-  --input-border: rgba(59, 130, 246, 0.2);
-  --tab-bg: rgba(7, 15, 38, 0.6);
-  --signal-item-bg: rgba(7, 15, 38, 0.6);
-}
-
-[data-theme="crimson"] {
-  --bg-color: #160709;
-  --bg-card: rgba(38, 16, 20, 0.75);
-  --border-color: rgba(239, 68, 68, 0.25);
-  --text-color: #FEF2F2;
-  --text-muted: #FCA5A5;
-  --accent-color: #EF4444;
-  --accent-secondary: #DC2626;
-  --accent-light: #F87171;
-  --orange-accent: #B91C1C;
-  --red-accent: #F87171;
-  --button-glow: rgba(239, 68, 68, 0.5);
-  --btn-gradient: radial-gradient(circle at 35% 35%, #FECACA 0%, #EF4444 45%, #DC2626 75%, #991B1B 100%);
-  --input-bg: rgba(22, 7, 9, 0.8);
-  --input-color: #FFFFFF;
-  --input-border: rgba(239, 68, 68, 0.2);
-  --tab-bg: rgba(22, 7, 9, 0.6);
-  --signal-item-bg: rgba(22, 7, 9, 0.6);
 }
 
 * {
