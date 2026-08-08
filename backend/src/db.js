@@ -31,11 +31,18 @@ db.exec(`
     circle_id INTEGER NOT NULL,
     sender_name TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'active',
+    location_area TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     acknowledged_by TEXT,
     acknowledged_at DATETIME,
     FOREIGN KEY (circle_id) REFERENCES circles(id) ON DELETE CASCADE
   );
 `);
+
+try {
+  db.exec("ALTER TABLE signals ADD COLUMN location_area TEXT;");
+} catch (e) {
+  // Column already exists or already created
+}
 
 module.exports = db;

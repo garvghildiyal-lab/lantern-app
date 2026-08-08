@@ -119,6 +119,11 @@
           </svg>
           Lantern
         </button>
+
+        <!-- Privacy note regarding location -->
+        <div style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 14px; max-width: 290px; line-height: 1.4; opacity: 0.85;">
+          🔒 Location is optional & approximate (city/neighborhood level only). Exact position is never shared.
+        </div>
       </div>
 
       <!-- Recent Signals Feed -->
@@ -526,6 +531,16 @@
     function showEmergencyOverlay(signal) {
       currentOverlaySignalId = signal.id;
       document.getElementById('overlay-sender-name').innerText = signal.sender_name;
+      
+      const subtitleEl = document.getElementById('overlay-subtitle');
+      if (subtitleEl) {
+        if (signal.location_area) {
+          subtitleEl.innerText = `needs help — near ${signal.location_area}`;
+        } else {
+          subtitleEl.innerText = 'needs help';
+        }
+      }
+
       document.getElementById('emergency-overlay').classList.remove('hidden');
 
       if (navigator.vibrate) {
@@ -583,6 +598,41 @@
       }, 6500);
     }
 
+    async function getApproximateLocationArea() {
+      if (!navigator.geolocation) return null;
+
+      return new Promise((resolve) => {
+        const timer = setTimeout(() => {
+          console.log('Location lookup timed out; proceeding without location.');
+          resolve(null);
+        }, 3000);
+
+        navigator.geolocation.getCurrentPosition(
+          async (pos) => {
+            clearTimeout(timer);
+            try {
+              const lat = pos.coords.latitude;
+              const lng = pos.coords.longitude;
+              const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`);
+              const data = await res.json();
+              const area = data.locality || data.city || data.principalSubdivision || data.countryName || null;
+              console.log('Coarse reverse-geocoded area:', area);
+              resolve(area);
+            } catch (err) {
+              console.warn('Reverse geocode error:', err);
+              resolve(null);
+            }
+          },
+          (err) => {
+            clearTimeout(timer);
+            console.log('Location permission denied or unavailable:', err.message);
+            resolve(null);
+          },
+          { timeout: 2500, maximumAge: 60000, enableHighAccuracy: false }
+        );
+      });
+    }
+
     async function sendHelpSignal() {
       if (navigator.vibrate) {
         navigator.vibrate([100, 50, 100]);
@@ -592,13 +642,17 @@
       toast.classList.remove('hidden');
       setTimeout(() => toast.classList.add('hidden'), 2500);
 
+      // Attempt coarse reverse geocoding (never blocks signal dispatch)
+      const location_area = await getApproximateLocationArea();
+
       try {
         await fetch('/api/signals', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             circle_id: currentCircle.circle_id,
-            sender_name: currentCircle.user_name
+            sender_name: currentCircle.user_name,
+            location_area: location_area
           })
         });
         loadSignals();
@@ -655,7 +709,9 @@
             <div class="signal-item ${isAck ? 'acknowledged' : ''}">
               <div>
                 <div class="signal-sender">🚨 ${escapeHtml(s.sender_name)}</div>
-                <div class="signal-time">${time} ${isAck ? `• Ack'd by <strong>${escapeHtml(s.acknowledged_by)}</strong>` : ''}</div>
+                <div class="signal-time">
+                  ${time} ${s.location_area ? `• 📍 Near <strong>${escapeHtml(s.location_area)}</strong>` : ''} ${isAck ? `• Ack'd by <strong>${escapeHtml(s.acknowledged_by)}</strong>` : ''}
+                </div>
               </div>
               <div>
                 ${!isAck && s.sender_name !== currentCircle.user_name ? 
