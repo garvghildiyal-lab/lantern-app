@@ -346,6 +346,26 @@
       box-shadow: 0 0 12px var(--glow-color);
     }
 
+    .btn-theme-toggle {
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid var(--border-card);
+      color: var(--amber-400);
+      font-size: 12px;
+      font-weight: 800;
+      padding: 5px 12px;
+      border-radius: 9999px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-theme-toggle:hover {
+      background: rgba(245, 158, 11, 0.3);
+      transform: translateY(-1px);
+    }
+
     /* LANTERN BUTTON CONTAINER */
     .lantern-stage {
       display: flex;
@@ -707,9 +727,10 @@
       </div>
       <div class="brand-tagline">Silent help-signals for your Circle</div>
 
-      <!-- THEME SWITCHER BAR -->
+      <!-- THEME SWITCHER BAR WITH QUICK DARK/LIGHT TOGGLE -->
       <div class="theme-bar">
-        <span class="theme-label">🎨 Theme:</span>
+        <button id="theme-toggle-icon-btn" class="btn-theme-toggle" onclick="toggleDarkLightTheme()" title="Toggle Dark / Light Theme">☀️ Light Mode</button>
+        <span style="color: var(--text-muted); opacity: 0.5;">|</span>
         <button class="theme-chip amber active" onclick="setTheme('amber')">🌙 Amber</button>
         <button class="theme-chip emerald" onclick="setTheme('emerald')">🌿 Emerald</button>
         <button class="theme-chip sapphire" onclick="setTheme('sapphire')">🌌 Sapphire</button>
@@ -1034,6 +1055,17 @@
       document.querySelectorAll('.theme-chip').forEach(btn => {
         btn.classList.toggle('active', btn.classList.contains(themeName));
       });
+
+      const toggleBtn = document.getElementById('theme-toggle-icon-btn');
+      if (toggleBtn) {
+        toggleBtn.innerHTML = (themeName === 'light') ? '🌙 Dark Mode' : '☀️ Light Mode';
+      }
+    }
+
+    function toggleDarkLightTheme() {
+      const currentTheme = localStorage.getItem('lantern_theme') || 'amber';
+      const newTheme = (currentTheme === 'light') ? 'amber' : 'light';
+      setTheme(newTheme);
     }
 
     function initTheme() {
