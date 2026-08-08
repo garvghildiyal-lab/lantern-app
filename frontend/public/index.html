@@ -630,8 +630,9 @@
         <button type="submit" class="btn-submit">Join Circle</button>
       </form>
 
-      <div style="text-align: center; margin-top: 16px;">
+      <div style="text-align: center; margin-top: 16px; display: flex; gap: 8px; justify-content: center;">
         <button id="setup-enable-audio-btn" type="button" class="btn-enable-alerts hidden" onclick="enableAudioAlerts()">🔔 Enable Alert Sound</button>
+        <button type="button" class="btn-sound" onclick="testSingleBeepSound()">🔊 Test Sound</button>
       </div>
     </div>
 
@@ -649,6 +650,7 @@
         <div style="display: flex; gap: 8px; align-items: center;">
           <button id="enable-audio-btn" class="btn-enable-alerts hidden" onclick="enableAudioAlerts()">🔔 Enable alerts</button>
           <button id="mute-toggle-btn" class="btn-sound hidden" onclick="toggleMutePreference()">🔊 Sound On</button>
+          <button class="btn-sound" onclick="testSingleBeepSound()">🔊 Test Sound</button>
           <button class="btn-leave" onclick="leaveCircle()">Switch</button>
         </div>
       </div>
@@ -715,21 +717,25 @@
     const KEY_AUDIO_GRANTED = 'lantern_audio_granted';
     const KEY_AUDIO_MUTED = 'lantern_audio_muted';
 
-    // PURE WEB AUDIO API ENGINE (No <audio> tag or external files)
+    // PURE WEB AUDIO API ENGINE (Created strictly inside user click handler)
     let audioCtx = null;
     let beepLoopInterval = null;
     let isBeepLoopRunning = false;
     let activeOscillators = [];
 
-    function getAudioContext() {
+    // 1 & 2. Ensure AudioContext is created in a user gesture and resume() is awaited
+    async function ensureAudioContextRunning() {
       if (!audioCtx) {
         const AudioContextClass = window.AudioContext || window.webkitAudioContext;
         if (AudioContextClass) {
           audioCtx = new AudioContextClass();
+          console.log('🎧 AudioContext created inside user gesture handler. SampleRate:', audioCtx.sampleRate);
         }
       }
-      if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume().catch(() => {});
+      if (audioCtx && audioCtx.state !== 'running') {
+        console.log('⏳ Resuming AudioContext from state:', audioCtx.state);
+        await audioCtx.resume();
+        console.log('✅ AudioContext state after resume():', audioCtx.state);
       }
       return audioCtx;
     }
@@ -742,13 +748,19 @@
       return localStorage.getItem(KEY_AUDIO_MUTED) === 'true';
     }
 
-    function enableAudioAlerts() {
+    async function enableAudioAlerts() {
       localStorage.setItem(KEY_AUDIO_GRANTED, 'true');
-      const ctx = getAudioContext();
-      if (ctx && ctx.state === 'suspended') {
-        ctx.resume().catch(() => {});
-      }
-      playSOSBeepPattern(); // Play test beep to verify audio
+      console.log('👆 "Enable alerts" button clicked!');
+      const ctx = await ensureAudioContextRunning();
+      await playSOSBeepPattern();
+      updateAudioUI();
+    }
+
+    async function testSingleBeepSound() {
+      console.log('🧪 "Test Sound" button clicked!');
+      localStorage.setItem(KEY_AUDIO_GRANTED, 'true');
+      const ctx = await ensureAudioContextRunning();
+      await playSOSBeepPattern();
       updateAudioUI();
     }
 
@@ -789,7 +801,7 @@
       }
     }
 
-    // 1. Play single Web Audio oscillator beep
+    // 3 & 4. Oscillator connected to GainNode, Gain set > 0, Gain connected to destination, with console logging
     function playSingleOscillator(ctx, freq, durationSec, startTime) {
       try {
         const osc = ctx.createOscillator();
@@ -798,13 +810,15 @@
         osc.type = 'sine';
         osc.frequency.setValueAtTime(freq, startTime);
 
-        gain.gain.setValueAtTime(0.001, startTime);
-        gain.gain.linearRampToValueAtTime(0.4, startTime + 0.01);
-        gain.gain.setValueAtTime(0.4, startTime + durationSec - 0.01);
-        gain.gain.linearRampToValueAtTime(0.001, startTime + durationSec);
+        // Gain configuration: Non-zero gain (0.5) connected to destination
+        gain.gain.setValueAtTime(0.5, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + durationSec);
 
         osc.connect(gain);
         gain.connect(ctx.destination);
+
+        // 4. Console log right before oscillator.start()
+        console.log(`🔊 [Oscillator] Starting ${freq}Hz tone at ${startTime.toFixed(3)}s (duration: ${durationSec}s, ctx.state: ${ctx.state}, destination connected: true)`);
 
         osc.start(startTime);
         osc.stop(startTime + durationSec);
@@ -814,23 +828,27 @@
           activeOscillators = activeOscillators.filter(o => o !== osc);
         };
       } catch (e) {
-        console.error('Oscillator play error:', e);
+        console.error('❌ Oscillator play error:', e);
       }
     }
 
-    // 1. Short SOS-style beep pattern: Two alternating tones (880Hz and 660Hz), each ~200ms, 50ms gap
-    function playSOSBeepPattern() {
-      if (isMuted()) return;
-      const ctx = getAudioContext();
-      if (!ctx) return;
-
-      if (ctx.state === 'suspended') {
-        ctx.resume().catch(() => {});
+    // 1 & 2. Short SOS-style beep pattern: Two alternating tones (880Hz and 660Hz), each ~200ms, 50ms gap
+    async function playSOSBeepPattern() {
+      if (isMuted()) {
+        console.log('🔇 Sound skipped: Audio is muted');
+        return;
+      }
+      const ctx = await ensureAudioContextRunning();
+      if (!ctx || ctx.state !== 'running') {
+        console.warn('⚠️ AudioContext not running. Current state:', ctx ? ctx.state : 'null');
+        return;
       }
 
       const now = ctx.currentTime;
       const toneDuration = 0.20; // ~200ms
       const gap = 0.05;          // ~50ms gap
+
+      console.log('🎵 Triggering SOS Beep Pattern (880Hz & 660Hz) at currentTime:', now.toFixed(3));
 
       // Tone 1: 880 Hz
       playSingleOscillator(ctx, 880, toneDuration, now);
