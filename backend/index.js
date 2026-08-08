@@ -140,7 +140,7 @@ app.get('/api/circles/:id/members', (req, res) => {
 
 // POST /api/signals — Create a new signal & broadcast "signal:new"
 app.post('/api/signals', (req, res) => {
-  const { circle_id, sender_name, location_area } = req.body;
+  const { circle_id, sender_name } = req.body;
   if (!circle_id || !sender_name) {
     return res.status(400).json({ error: 'Both circle_id and sender_name are required' });
   }
@@ -151,16 +151,14 @@ app.post('/api/signals', (req, res) => {
       return res.status(404).json({ error: 'Circle not found' });
     }
 
-    const areaString = location_area && typeof location_area === 'string' ? location_area.trim().substring(0, 100) : null;
-
     const insertSignal = db.prepare(
-      'INSERT INTO signals (circle_id, sender_name, status, location_area) VALUES (?, ?, ?, ?)'
+      'INSERT INTO signals (circle_id, sender_name, status) VALUES (?, ?, ?)'
     );
-    const result = insertSignal.run(circle_id, sender_name.trim(), 'active', areaString);
+    const result = insertSignal.run(circle_id, sender_name.trim(), 'active');
     const signal = db.prepare('SELECT * FROM signals WHERE id = ?').get(result.lastInsertRowid);
     const totalCount = db.prepare('SELECT COUNT(*) as count FROM signals').get().count;
 
-    console.log(`[SQL PERSISTENCE] Signal ID #${signal.id} saved to SQLite DB for Circle #${circle_id} by "${sender_name.trim()}" (Location: ${areaString || 'None'}). Total signals in DB: ${totalCount}`);
+    console.log(`[SQL PERSISTENCE] Signal ID #${signal.id} saved to SQLite DB for Circle #${circle_id} by "${sender_name.trim()}". Total signals in DB: ${totalCount}`);
 
     // Broadcast "signal:new" event to room `circle:{circle_id}`
     io.to(`circle:${circle_id}`).emit('signal:new', signal);
