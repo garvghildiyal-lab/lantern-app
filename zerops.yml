@@ -4,8 +4,9 @@ zerops:
       base: nodejs@20
       buildCommands:
         - npm install
+        - npm run build   # 👈 Generates the updated build
       deployFiles:
-        - ./
+        - ./              # 👈 Deploys root containing node_modules & build output
     run:
       base: nodejs@20
       start: npm start
