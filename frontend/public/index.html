@@ -1071,7 +1071,7 @@
       socket.on('signal:new', (newSignal) => {
         loadSignals();
 
-        // Play alarming SOS sound whenever an alert is created in the circle
+        // Play alarming SOS sound continuously whenever an alert is created in the circle
         startSOSAlarm();
 
         // If signal comes from someone else, show full-screen emergency overlay
@@ -1083,13 +1083,12 @@
       socket.on('signal:acknowledged', (ackSignal) => {
         loadSignals();
 
-        // Stop SOS alarm when signal is acknowledged
+        // Stop SOS alarm for everyone in the circle when signal is acknowledged
         stopSOSAlarm();
+        dismissEmergencyOverlay();
 
-        // If I sent this signal, show a confirmation toast that someone acknowledged it
-        if (ackSignal.sender_name === currentCircle.user_name && ackSignal.acknowledged_by) {
-          showAckConfirmationToast(ackSignal.acknowledged_by);
-        }
+        // Broadcast acknowledgment notification with person's name to everyone in the circle immediately
+        showAckConfirmationToast(ackSignal);
       });
     }
 
@@ -1118,12 +1117,27 @@
     function dismissEmergencyOverlay() {
       document.getElementById('emergency-overlay').classList.add('hidden');
       currentOverlaySignalId = null;
-      stopSOSAlarm();
     }
 
-    function showAckConfirmationToast(ackBy) {
+    function showAckConfirmationToast(ackSignal) {
+      if (!ackSignal || !ackSignal.acknowledged_by) return;
+
       const toast = document.getElementById('ack-toast');
-      document.getElementById('ack-toast-text').innerText = `${ackBy} acknowledged your signal! Help is on the way.`;
+      const toastText = document.getElementById('ack-toast-text');
+
+      const isSender = ackSignal.sender_name === currentCircle.user_name;
+      const isAckByMe = ackSignal.acknowledged_by === currentCircle.user_name;
+
+      let msg = '';
+      if (isSender) {
+        msg = `✅ ${escapeHtml(ackSignal.acknowledged_by)} acknowledged your help signal! Help is on the way.`;
+      } else if (isAckByMe) {
+        msg = `✅ You acknowledged ${escapeHtml(ackSignal.sender_name)}'s help signal.`;
+      } else {
+        msg = `✅ ${escapeHtml(ackSignal.acknowledged_by)} acknowledged ${escapeHtml(ackSignal.sender_name)}'s help signal!`;
+      }
+
+      toastText.innerHTML = msg;
       toast.classList.remove('hidden');
 
       if (navigator.vibrate) {
@@ -1132,7 +1146,7 @@
 
       setTimeout(() => {
         toast.classList.add('hidden');
-      }, 5000);
+      }, 6500);
     }
 
     async function sendHelpSignal() {
@@ -1182,7 +1196,18 @@
 
         if (!signals || signals.length === 0) {
           container.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 12px;">No active signals. Tap Lantern if you need help.</div>`;
+          stopSOSAlarm();
           return;
+        }
+
+        const activeSignal = signals.find(s => s.status === 'active');
+        if (activeSignal) {
+          startSOSAlarm();
+          if (activeSignal.sender_name !== currentCircle.user_name && document.getElementById('emergency-overlay').classList.contains('hidden')) {
+            showEmergencyOverlay(activeSignal);
+          }
+        } else {
+          stopSOSAlarm();
         }
 
         container.innerHTML = signals.map(s => {
@@ -1193,12 +1218,12 @@
             <div class="signal-item ${isAck ? 'acknowledged' : ''}">
               <div>
                 <div class="signal-sender">🚨 ${escapeHtml(s.sender_name)}</div>
-                <div class="signal-time">${time} ${isAck ? `• Ack'd by ${escapeHtml(s.acknowledged_by)}` : ''}</div>
+                <div class="signal-time">${time} ${isAck ? `• Ack'd by <strong>${escapeHtml(s.acknowledged_by)}</strong>` : ''}</div>
               </div>
               <div>
                 ${!isAck && s.sender_name !== currentCircle.user_name ? 
                   `<button class="btn-ack" onclick="acknowledgeSignal(${s.id})">Acknowledge</button>` :
-                  `<span class="signal-status ${isAck ? 'status-ack' : 'status-active'}">${isAck ? 'ACKNOWLEDGED' : 'ACTIVE'}</span>`
+                  `<span class="signal-status ${isAck ? 'status-ack' : 'status-active'}">${isAck ? `ACK BY ${escapeHtml(s.acknowledged_by || '').toUpperCase()}` : 'ACTIVE'}</span>`
                 }
               </div>
             </div>
