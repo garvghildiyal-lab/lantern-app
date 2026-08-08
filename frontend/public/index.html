@@ -630,8 +630,9 @@
         <button type="submit" class="btn-submit">Join Circle</button>
       </form>
 
-      <div style="text-align: center; margin-top: 16px; display: flex; gap: 8px; justify-content: center;">
-        <button id="setup-enable-audio-btn" type="button" class="btn-enable-alerts hidden" onclick="enableAudioAlerts()">🔔 Enable Alert Sound</button>
+      <div style="text-align: center; margin-top: 16px; display: flex; gap: 8px; justify-content: center; align-items: center; flex-wrap: wrap;">
+        <button id="setup-enable-audio-btn" type="button" class="btn-enable-alerts" onclick="enableAudioAlerts()">🔔 Enable Alert Sound</button>
+        <button id="setup-mute-btn" type="button" class="btn-sound hidden" onclick="toggleMutePreference()">🔊 Sound On</button>
         <button type="button" class="btn-sound" onclick="testSingleBeepSound()">🔊 Test Sound</button>
       </div>
     </div>
@@ -776,29 +777,32 @@
     }
 
     function updateAudioUI() {
-      const enableBtn = document.getElementById('enable-audio-btn');
       const setupEnableBtn = document.getElementById('setup-enable-audio-btn');
+      const setupMuteBtn = document.getElementById('setup-mute-btn');
+      const homeEnableBtn = document.getElementById('enable-audio-btn');
+      const homeMuteBtn = document.getElementById('mute-toggle-btn');
       const overlayEnableBtn = document.getElementById('overlay-enable-btn');
-      const muteBtn = document.getElementById('mute-toggle-btn');
 
       const granted = isAudioGranted();
       const muted = isMuted();
 
-      if (!granted) {
-        if (enableBtn) enableBtn.classList.remove('hidden');
-        if (setupEnableBtn) setupEnableBtn.classList.remove('hidden');
-        if (overlayEnableBtn) overlayEnableBtn.classList.remove('hidden');
-        if (muteBtn) muteBtn.classList.add('hidden');
-      } else {
-        if (enableBtn) enableBtn.classList.add('hidden');
-        if (setupEnableBtn) setupEnableBtn.classList.add('hidden');
-        if (overlayEnableBtn) overlayEnableBtn.classList.add('hidden');
-        if (muteBtn) {
-          muteBtn.classList.remove('hidden');
-          muteBtn.innerHTML = muted ? '🔇 Muted' : (isBeepLoopRunning ? '🚨 ALERTING 🔊' : '🔊 Sound On');
-          muteBtn.classList.toggle('alarm-active', isBeepLoopRunning && !muted);
-        }
+      const soundLabel = muted ? '🔇 Muted' : (isBeepLoopRunning ? '🚨 ALERTING 🔊' : '🔊 Sound On');
+
+      if (setupEnableBtn) setupEnableBtn.classList.toggle('hidden', granted);
+      if (setupMuteBtn) {
+        setupMuteBtn.classList.toggle('hidden', !granted);
+        setupMuteBtn.innerHTML = soundLabel;
+        setupMuteBtn.classList.toggle('alarm-active', isBeepLoopRunning && !muted);
       }
+
+      if (homeEnableBtn) homeEnableBtn.classList.toggle('hidden', granted);
+      if (homeMuteBtn) {
+        homeMuteBtn.classList.toggle('hidden', !granted);
+        homeMuteBtn.innerHTML = soundLabel;
+        homeMuteBtn.classList.toggle('alarm-active', isBeepLoopRunning && !muted);
+      }
+
+      if (overlayEnableBtn) overlayEnableBtn.classList.toggle('hidden', granted);
     }
 
     // 3 & 4. Oscillator connected to GainNode, Gain set > 0 (0.4 constant), Gain connected to destination, with console logging
