@@ -707,13 +707,46 @@
       background: rgba(255, 255, 255, 0.3);
     }
 
-    @keyframes slide-down {
-      from { transform: translate(-50%, -30px); opacity: 0; }
-      to { transform: translate(-50%, 0); opacity: 1; }
+    /* FLOATING TOP-RIGHT THEME TOGGLE ICON BUTTON */
+    .floating-theme-btn {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 10001;
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1.5px solid var(--border-card);
+      color: var(--amber-400);
+      font-size: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), 0 0 12px var(--glow-color);
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .floating-theme-btn:hover {
+      transform: scale(1.12) rotate(15deg);
+      border-color: var(--amber-500);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4), 0 0 20px var(--glow-color);
+    }
+
+    .floating-theme-btn:active {
+      transform: scale(0.92);
     }
   </style>
 </head>
 <body>
+
+  <!-- FLOATING TOP-RIGHT THEME TOGGLE ICON BUTTON -->
+  <button id="floating-theme-toggle" class="floating-theme-btn" onclick="toggleDarkLightTheme()" title="Toggle Dark / Light Mode" aria-label="Toggle Dark / Light Mode">
+    ☀️
+  </button>
 
   <div class="app-container">
     
@@ -1055,6 +1088,12 @@
       document.querySelectorAll('.theme-chip').forEach(btn => {
         btn.classList.toggle('active', btn.classList.contains(themeName));
       });
+
+      const floatBtn = document.getElementById('floating-theme-toggle');
+      if (floatBtn) {
+        floatBtn.innerHTML = (themeName === 'light') ? '🌙' : '☀️';
+        floatBtn.title = (themeName === 'light') ? 'Switch to Dark Mode' : 'Switch to Light Mode';
+      }
 
       const toggleBtn = document.getElementById('theme-toggle-icon-btn');
       if (toggleBtn) {
