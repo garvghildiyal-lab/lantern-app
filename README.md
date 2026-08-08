@@ -12,15 +12,15 @@ Not every difficult moment is an emergency. But sometimes, you simply need someo
 
 ---
 
+
+
 The application is deployed with HTTPS and has been tested end-to-end on real devices.
 
 ---
 
-## 💡 The Problem & Key Differentiator
+## 💡 The Problem
 
 Calling someone requires effort. Texting requires words. Explaining what is wrong can be even harder.
-
-> **Native SOS handles emergencies; Lantern handles the moments in between — when you don't need emergency services, but you need your trusted people.**
 
 Lantern removes that friction.
 

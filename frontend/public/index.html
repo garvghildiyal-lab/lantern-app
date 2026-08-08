@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -8,7 +9,8 @@
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap"
+    rel="stylesheet">
 
   <!-- Socket.io client -->
   <script src="/socket.io/socket.io.js"></script>
@@ -16,20 +18,23 @@
   <!-- Modular CSS Stylesheet -->
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
   <!-- FLOATING TOP-RIGHT THEME TOGGLE ICON BUTTON -->
-  <button id="floating-theme-toggle" class="floating-theme-btn" onclick="toggleDarkLightTheme()" title="Toggle Dark / Light Mode" aria-label="Toggle Dark / Light Mode">
+  <button id="floating-theme-toggle" class="floating-theme-btn" onclick="toggleDarkLightTheme()"
+    title="Toggle Dark / Light Mode" aria-label="Toggle Dark / Light Mode">
     ☀️
   </button>
 
   <div class="app-container">
-    
+
     <!-- BRAND HEADER -->
     <div class="brand-header">
       <div class="brand-title">
         <svg class="brand-icon" viewBox="0 0 24 24">
-          <path d="M12 2C11.45 2 11 2.45 11 3V4.08C8.16 4.56 6 7.03 6 10V16L4 18V19H20V18L18 16V10C18 7.03 15.84 4.56 13 4.08V3C13 2.45 12.55 2 12 2ZM12 22C13.1 22 14 21.1 14 20H10C10 21.1 10.9 22 12 22Z"/>
+          <path
+            d="M12 2C11.45 2 11 2.45 11 3V4.08C8.16 4.56 6 7.03 6 10V16L4 18V19H20V18L18 16V10C18 7.03 15.84 4.56 13 4.08V3C13 2.45 12.55 2 12 2ZM12 22C13.1 22 14 21.1 14 20H10C10 21.1 10.9 22 12 22Z" />
         </svg>
         Lantern
       </div>
@@ -45,7 +50,8 @@
 
     <!-- STATE 1: SETUP SCREEN (Create / Join Circle) -->
     <div id="setup-screen" class="setup-card">
-      <div style="font-size: 14px; color: var(--text-color); font-weight: 700; font-style: italic; text-align: center; margin-bottom: 20px; line-height: 1.4;">
+      <div
+        style="font-size: 14px; color: var(--text-color); font-weight: 700; font-style: italic; text-align: center; margin-bottom: 20px; line-height: 1.4;">
         "Sometimes you just need someone to know — without having to explain."
       </div>
 
@@ -58,7 +64,8 @@
       <form id="create-form" onsubmit="handleCreateCircle(event)">
         <div class="form-group">
           <label class="form-label">Circle Name</label>
-          <input type="text" id="create-circle-name" class="form-input" placeholder="e.g. My Family, Dorm Crew" required>
+          <input type="text" id="create-circle-name" class="form-input" placeholder="e.g. My Family, Dorm Crew"
+            required>
         </div>
         <div class="form-group">
           <label class="form-label">Your Name</label>
@@ -71,7 +78,8 @@
       <form id="join-form" class="hidden" onsubmit="handleJoinCircle(event)">
         <div class="form-group">
           <label class="form-label">6-Character Invite Code</label>
-          <input type="text" id="join-invite-code" class="form-input" placeholder="e.g. 550E23" maxlength="6" style="text-transform: uppercase; letter-spacing: 2px;" required>
+          <input type="text" id="join-invite-code" class="form-input" placeholder="e.g. 550E23" maxlength="6"
+            style="text-transform: uppercase; letter-spacing: 2px;" required>
         </div>
         <div class="form-group">
           <label class="form-label">Your Name</label>
@@ -80,17 +88,23 @@
         <button type="submit" class="btn-submit">Join Circle</button>
       </form>
 
-      <div style="text-align: center; margin-top: 16px; display: flex; gap: 8px; justify-content: center; align-items: center; flex-wrap: wrap;">
-        <button id="setup-enable-audio-btn" type="button" class="btn-enable-alerts" onclick="enableAudioAlerts()">🔔 Enable Alert Sound</button>
-        <button id="setup-mute-btn" type="button" class="btn-sound hidden" onclick="toggleMutePreference()">🔊 Sound On</button>
+      <div
+        style="text-align: center; margin-top: 16px; display: flex; gap: 8px; justify-content: center; align-items: center; flex-wrap: wrap;">
+        <button id="setup-enable-audio-btn" type="button" class="btn-enable-alerts" onclick="enableAudioAlerts()">🔔
+          Enable Alert Sound</button>
+        <button id="setup-mute-btn" type="button" class="btn-sound hidden" onclick="toggleMutePreference()">🔊 Sound
+          On</button>
         <button type="button" class="btn-sound" onclick="testSingleBeepSound()">🔊 Test Sound</button>
       </div>
 
       <!-- RECENT CIRCLES SECTION -->
-      <div id="recent-circles-container" class="hidden" style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 16px;">
-        <div class="form-label" style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+      <div id="recent-circles-container" class="hidden"
+        style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 16px;">
+        <div class="form-label"
+          style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
           <span>⚡ Recent Circles</span>
-          <span style="font-size: 11px; text-transform: none; font-weight: 500; color: var(--text-muted);">Quick Re-join</span>
+          <span style="font-size: 11px; text-transform: none; font-weight: 500; color: var(--text-muted);">Quick
+            Re-join</span>
         </div>
         <div id="recent-circles-list" style="display: flex; flex-direction: column; gap: 8px;">
           <!-- Populated dynamically -->
@@ -100,7 +114,7 @@
 
     <!-- STATE 2: HOME SCREEN (ACTIVE LANTERN BUTTON) -->
     <div id="home-screen" class="hidden" style="width: 100%;">
-      
+
       <!-- Circle Header Info -->
       <div class="home-header">
         <div class="circle-info">
@@ -110,8 +124,10 @@
           </span>
         </div>
         <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-          <button id="home-theme-toggle-btn" class="btn-sound" onclick="toggleDarkLightTheme()" title="Toggle Light/Dark Theme">🌙 Dark</button>
-          <button id="enable-audio-btn" class="btn-enable-alerts hidden" onclick="enableAudioAlerts()">🔔 Enable alerts</button>
+          <button id="home-theme-toggle-btn" class="btn-sound" onclick="toggleDarkLightTheme()"
+            title="Toggle Light/Dark Theme">🌙 Dark</button>
+          <button id="enable-audio-btn" class="btn-enable-alerts hidden" onclick="enableAudioAlerts()">🔔 Enable
+            alerts</button>
           <button id="mute-toggle-btn" class="btn-sound hidden" onclick="toggleMutePreference()">🔊 Sound On</button>
           <button class="btn-sound" onclick="testSingleBeepSound()">🔊 Test Sound</button>
           <button class="btn-leave" onclick="leaveCircle()">Switch</button>
@@ -126,7 +142,8 @@
 
         <button id="lantern-btn" class="lantern-btn" onclick="sendHelpSignal()">
           <svg class="lantern-btn-icon" viewBox="0 0 24 24">
-            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+            <path
+              d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
           </svg>
           Lantern
         </button>
@@ -163,16 +180,19 @@
   <!-- FULL-SCREEN EMERGENCY ALERT OVERLAY (For Receivers) -->
   <div id="emergency-overlay" class="emergency-overlay hidden">
     <svg class="alert-beacon-icon" viewBox="0 0 24 24">
-      <path d="M12 2C11.45 2 11 2.45 11 3V4.08C8.16 4.56 6 7.03 6 10V16L4 18V19H20V18L18 16V10C18 7.03 15.84 4.56 13 4.08V3C13 2.45 12.55 2 12 2ZM12 22C13.1 22 14 21.1 14 20H10C10 21.1 10.9 22 12 22Z"/>
+      <path
+        d="M12 2C11.45 2 11 2.45 11 3V4.08C8.16 4.56 6 7.03 6 10V16L4 18V19H20V18L18 16V10C18 7.03 15.84 4.56 13 4.08V3C13 2.45 12.55 2 12 2ZM12 22C13.1 22 14 21.1 14 20H10C10 21.1 10.9 22 12 22Z" />
     </svg>
     <div class="alert-title">🚨 CIRCLE HELP SIGNAL 🚨</div>
     <div id="overlay-sender-name" class="alert-sender">Someone</div>
     <div class="alert-subtitle">Needs immediate assistance from your Circle!</div>
-    
-    <button id="overlay-enable-btn" class="btn-enable-alerts hidden" style="margin-bottom: 14px; font-size: 16px; padding: 12px 24px;" onclick="enableAudioAlerts(); event.stopPropagation();">
+
+    <button id="overlay-enable-btn" class="btn-enable-alerts hidden"
+      style="margin-bottom: 14px; font-size: 16px; padding: 12px 24px;"
+      onclick="enableAudioAlerts(); event.stopPropagation();">
       🔔 Enable Alert Sound
     </button>
-    
+
     <button class="btn-im-here" onclick="handleImHereClick(); event.stopPropagation();">I'm Here</button>
   </div>
 
@@ -363,7 +383,7 @@
         beepLoopInterval = null;
       }
       activeOscillators.forEach(osc => {
-        try { osc.stop(); } catch (e) {}
+        try { osc.stop(); } catch (e) { }
       });
       activeOscillators = [];
       updateAudioUI();
@@ -641,7 +661,7 @@
     function showEmergencyOverlay(signal) {
       currentOverlaySignalId = signal.id;
       document.getElementById('overlay-sender-name').innerText = signal.sender_name;
-      
+
       const subtitleEl = document.getElementById('overlay-subtitle');
       if (subtitleEl) {
         subtitleEl.innerText = 'needs help';
@@ -781,10 +801,10 @@
                 </div>
               </div>
               <div>
-                ${!isAck && s.sender_name !== currentCircle.user_name ? 
-                  `<button class="btn-ack" onclick="acknowledgeSignal(${s.id})">Acknowledge</button>` :
-                  `<span class="signal-status ${isAck ? 'status-ack' : 'status-active'}">${isAck ? `ACK BY ${escapeHtml(s.acknowledged_by || '').toUpperCase()}` : 'ACTIVE'}</span>`
-                }
+                ${!isAck && s.sender_name !== currentCircle.user_name ?
+              `<button class="btn-ack" onclick="acknowledgeSignal(${s.id})">Acknowledge</button>` :
+              `<span class="signal-status ${isAck ? 'status-ack' : 'status-active'}">${isAck ? `ACK BY ${escapeHtml(s.acknowledged_by || '').toUpperCase()}` : 'ACTIVE'}</span>`
+            }
               </div>
             </div>
           `;
@@ -834,10 +854,10 @@
         return `
           <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--signal-item-bg); border-radius: 12px; border: 1px solid var(--border-color);">
             <div style="display: flex; align-items: center; gap: 10px;">
-              ${isOnline ? 
-                `<span style="width: 10px; height: 10px; border-radius: 50%; background: #10B981; box-shadow: 0 0 8px #10B981; display: inline-block;"></span>` :
-                `<span style="width: 10px; height: 10px; border-radius: 50%; background: var(--text-muted); opacity: 0.4; display: inline-block;"></span>`
-              }
+              ${isOnline ?
+            `<span style="width: 10px; height: 10px; border-radius: 50%; background: #10B981; box-shadow: 0 0 8px #10B981; display: inline-block;"></span>` :
+            `<span style="width: 10px; height: 10px; border-radius: 50%; background: var(--text-muted); opacity: 0.4; display: inline-block;"></span>`
+          }
               <span style="font-weight: 700; font-size: 14px; color: var(--text-color);">
                 ${escapeHtml(m.name)} ${isMe ? '<span style="font-size: 11px; color: var(--accent-light); opacity: 0.8;">(You)</span>' : ''}
               </span>
@@ -897,10 +917,11 @@
 
     function escapeHtml(str) {
       if (!str) return '';
-      return str.replace(/[&<>"']/g, function(m) {
+      return str.replace(/[&<>"']/g, function (m) {
         return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
       });
     }
   </script>
 </body>
+
 </html>
