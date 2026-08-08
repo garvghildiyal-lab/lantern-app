@@ -130,12 +130,23 @@
       <div class="signals-card">
         <div class="signals-header">
           <span>Circle Signals</span>
-          <span id="user-badge" style="color: var(--amber-400); text-transform: none;">👤 You</span>
+          <span id="user-badge" style="color: var(--accent-light); text-transform: none;">👤 You</span>
         </div>
         <div id="signals-list">
           <div style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 12px;">
             No active signals. Tap Lantern if you need help.
           </div>
+        </div>
+      </div>
+
+      <!-- Circle Members & Presence List -->
+      <div class="signals-card" style="margin-top: 16px;">
+        <div class="signals-header">
+          <span>Circle Members</span>
+          <span id="online-count-badge" style="color: #10B981; font-weight: 700; font-size: 11px;">🟢 0 Online</span>
+        </div>
+        <div id="members-presence-list" style="display: flex; flex-direction: column; gap: 8px;">
+          <!-- Member presence items populated dynamically -->
         </div>
       </div>
 
@@ -490,6 +501,7 @@
 
       connectSocket();
       loadSignals();
+      loadMembers();
     }
 
     function connectSocket() {
@@ -497,7 +509,15 @@
       socket = io();
 
       socket.on('connect', () => {
-        socket.emit('join_circle', currentCircle.circle_id);
+        socket.emit('join_circle', {
+          circle_id: currentCircle.circle_id,
+          user_name: currentCircle.user_name
+        });
+      });
+
+      // Presence update broadcast
+      socket.on('presence:update', (updatedMembers) => {
+        renderMembersList(updatedMembers);
       });
 
       // 2. When a circle member's browser receives "signal:new" (and they are NOT the sender)
@@ -736,6 +756,77 @@
         return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       } catch (e) {
         return dateStr;
+      }
+    }
+
+    async function loadMembers() {
+      try {
+        const res = await fetch(`/api/circles/${currentCircle.circle_id}/members`);
+        const members = await res.json();
+        renderMembersList(members);
+      } catch (err) {
+        console.error('Error loading members:', err);
+      }
+    }
+
+    function renderMembersList(members) {
+      const container = document.getElementById('members-presence-list');
+      const countBadge = document.getElementById('online-count-badge');
+      if (!container || !members) return;
+
+      const onlineCount = members.filter(m => m.is_online).length;
+      if (countBadge) {
+        countBadge.innerText = `🟢 ${onlineCount} Online`;
+      }
+
+      container.innerHTML = members.map(m => {
+        const isMe = m.name === currentCircle.user_name;
+        const isOnline = m.is_online;
+        const relativeTime = formatRelativeLastSeen(m.last_seen);
+
+        return `
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--signal-item-bg); border-radius: 12px; border: 1px solid var(--border-color);">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              ${isOnline ? 
+                `<span style="width: 10px; height: 10px; border-radius: 50%; background: #10B981; box-shadow: 0 0 8px #10B981; display: inline-block;"></span>` :
+                `<span style="width: 10px; height: 10px; border-radius: 50%; background: var(--text-muted); opacity: 0.4; display: inline-block;"></span>`
+              }
+              <span style="font-weight: 700; font-size: 14px; color: var(--text-color);">
+                ${escapeHtml(m.name)} ${isMe ? '<span style="font-size: 11px; color: var(--accent-light); opacity: 0.8;">(You)</span>' : ''}
+              </span>
+            </div>
+            <div style="font-size: 12px; font-weight: 600; color: ${isOnline ? '#10B981' : 'var(--text-muted)'};">
+              ${isOnline ? 'online' : relativeTime}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function formatRelativeLastSeen(dateStr) {
+      if (!dateStr) return 'active long ago';
+      try {
+        const iso = dateStr.includes('T') ? dateStr : dateStr.replace(' ', 'T') + 'Z';
+        const lastSeenTime = new Date(iso).getTime();
+        if (isNaN(lastSeenTime)) return 'active long ago';
+
+        const now = Date.now();
+        const diffSec = Math.floor((now - lastSeenTime) / 1000);
+
+        if (diffSec < 45) return 'active just now';
+        if (diffSec < 90) return 'active 1 min ago';
+
+        const diffMin = Math.floor(diffSec / 60);
+        if (diffMin < 60) return `active ${diffMin} min ago`;
+
+        const diffHours = Math.floor(diffMin / 60);
+        if (diffHours < 24) return `active ${diffHours} ${diffHours === 1 ? 'hour' : 'hours'} ago`;
+
+        const diffDays = Math.floor(diffHours / 24);
+        if (diffDays === 1) return 'active yesterday';
+        return `active ${diffDays} days ago`;
+      } catch (e) {
+        return 'active long ago';
       }
     }
 

@@ -98,7 +98,29 @@ app.post('/api/circles/join', (req, res) => {
   }
 });
 
-// GET /api/circles/:id/members — List members of a circle
+// Presence Tracking Data Structure: Map<circleId, Map<socketId, userName>>
+const activeCircleSockets = new Map();
+
+function getCircleMembersWithPresence(circleId) {
+  const members = db.prepare('SELECT * FROM members WHERE circle_id = ? ORDER BY joined_at ASC').all(circleId);
+  const activeMap = activeCircleSockets.get(Number(circleId)) || new Map();
+  const onlineUserNames = new Set(Array.from(activeMap.values()));
+
+  return members.map(m => {
+    const isOnline = onlineUserNames.has(m.name);
+    return {
+      ...m,
+      is_online: isOnline
+    };
+  });
+}
+
+function broadcastPresenceUpdate(circleId) {
+  const membersList = getCircleMembersWithPresence(circleId);
+  io.to(`circle:${circleId}`).emit('presence:update', membersList);
+}
+
+// GET /api/circles/:id/members — List members of a circle with presence status
 app.get('/api/circles/:id/members', (req, res) => {
   const { id } = req.params;
 
@@ -108,7 +130,7 @@ app.get('/api/circles/:id/members', (req, res) => {
       return res.status(404).json({ error: 'Circle not found' });
     }
 
-    const members = db.prepare('SELECT * FROM members WHERE circle_id = ? ORDER BY joined_at ASC').all(id);
+    const members = getCircleMembersWithPresence(id);
     res.json(members);
   } catch (err) {
     console.error('Error fetching members:', err);
@@ -213,18 +235,56 @@ app.get('*', (req, res) => {
 io.on('connection', (socket) => {
   console.log(`Socket connected: ${socket.id}`);
 
-  // Support joining circle room: socket.emit('join_circle', { circle_id: 1 }) or socket.emit('join_circle', 1)
+  // Support joining circle room: socket.emit('join_circle', { circle_id: 1, user_name: "Alice" })
   socket.on('join_circle', (data) => {
-    const circle_id = typeof data === 'object' && data !== null ? data.circle_id : data;
+    const circle_id = typeof data === 'object' && data !== null ? Number(data.circle_id) : Number(data);
+    const user_name = typeof data === 'object' && data !== null ? data.user_name : null;
+
     if (circle_id) {
+      socket.circle_id = circle_id;
+      socket.user_name = user_name;
+
       const room = `circle:${circle_id}`;
       socket.join(room);
-      console.log(`Socket ${socket.id} joined room ${room}`);
+
+      if (user_name) {
+        if (!activeCircleSockets.has(circle_id)) {
+          activeCircleSockets.set(circle_id, new Map());
+        }
+        activeCircleSockets.get(circle_id).set(socket.id, user_name);
+
+        const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
+        try {
+          db.prepare('UPDATE members SET last_seen = ? WHERE circle_id = ? AND name = ?').run(now, circle_id, user_name);
+        } catch (e) {}
+      }
+
+      console.log(`Socket ${socket.id} (${user_name || 'Anon'}) joined room ${room}`);
+      broadcastPresenceUpdate(circle_id);
     }
   });
 
   socket.on('disconnect', () => {
     console.log(`Socket disconnected: ${socket.id}`);
+    if (socket.circle_id && socket.user_name) {
+      const circleId = socket.circle_id;
+      const userName = socket.user_name;
+      const activeMap = activeCircleSockets.get(circleId);
+
+      if (activeMap) {
+        activeMap.delete(socket.id);
+        if (activeMap.size === 0) {
+          activeCircleSockets.delete(circleId);
+        }
+      }
+
+      const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
+      try {
+        db.prepare('UPDATE members SET last_seen = ? WHERE circle_id = ? AND name = ?').run(now, circleId, userName);
+      } catch (e) {}
+
+      broadcastPresenceUpdate(circleId);
+    }
   });
 });
 

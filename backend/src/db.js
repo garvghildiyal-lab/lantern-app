@@ -22,6 +22,7 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     circle_id INTEGER NOT NULL,
     name TEXT NOT NULL,
+    last_seen DATETIME DEFAULT CURRENT_TIMESTAMP,
     joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (circle_id) REFERENCES circles(id) ON DELETE CASCADE
   );
@@ -41,8 +42,10 @@ db.exec(`
 
 try {
   db.exec("ALTER TABLE signals ADD COLUMN location_area TEXT;");
-} catch (e) {
-  // Column already exists or already created
-}
+} catch (e) {}
+
+try {
+  db.exec("ALTER TABLE members ADD COLUMN last_seen DATETIME;");
+} catch (e) {}
 
 module.exports = db;
