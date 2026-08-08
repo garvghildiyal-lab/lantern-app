@@ -512,7 +512,7 @@
       cursor: pointer;
     }
 
-    /* SOUND CONTROLS & SILENCE BUTTON */
+    /* SOUND CONTROLS & UNMUTE BANNER */
     .btn-sound {
       background: rgba(245, 158, 11, 0.15);
       border: 1px solid rgba(245, 158, 11, 0.3);
@@ -561,6 +561,25 @@
       background: rgba(255, 255, 255, 0.3);
     }
 
+    .audio-unlock-banner {
+      width: 100%;
+      background: linear-gradient(135deg, #EF4444, #DC2626);
+      color: #FFFFFF;
+      font-weight: 800;
+      font-size: 14px;
+      padding: 12px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      text-align: center;
+      cursor: pointer;
+      box-shadow: 0 0 20px rgba(239, 68, 68, 0.6);
+      animation: pulse-sound-alarm 0.8s infinite alternate ease-in-out;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
     @keyframes slide-down {
       from { transform: translate(-50%, -30px); opacity: 0; }
       to { transform: translate(-50%, 0); opacity: 1; }
@@ -580,6 +599,11 @@
         Lantern
       </div>
       <div class="brand-tagline">Silent help-signals for your Circle</div>
+    </div>
+
+    <!-- AUDIO UNLOCK BANNER (Shows if browser blocks autoplay) -->
+    <div id="audio-unlock-banner" class="audio-unlock-banner hidden" onclick="unlockAudioAndPlay()">
+      🔊 ALARM ACTIVE — TAP HERE TO PLAY SOS SOUND 🚨
     </div>
 
     <!-- STATE 1: SETUP SCREEN (Create / Join Circle) -->
@@ -614,6 +638,10 @@
         </div>
         <button type="submit" class="btn-submit">Join Circle</button>
       </form>
+
+      <div style="text-align: center; margin-top: 16px;">
+        <button type="button" class="btn-sound" onclick="testSirenSound()">🔊 Test SOS Siren</button>
+      </div>
     </div>
 
     <!-- STATE 2: HOME SCREEN (ACTIVE LANTERN BUTTON) -->
@@ -629,6 +657,7 @@
         </div>
         <div style="display: flex; gap: 8px; align-items: center;">
           <button id="sound-toggle-btn" class="btn-sound" onclick="toggleMute()">🔊 Sound On</button>
+          <button class="btn-sound" onclick="testSirenSound()">🔊 Test Siren</button>
           <button class="btn-leave" onclick="leaveCircle()">Switch</button>
         </div>
       </div>
@@ -687,13 +716,98 @@
     let currentCircle = null;
     let currentOverlaySignalId = null;
 
-    // Web Audio API emergency SOS siren engine
+    // AUDIO ENGINE (Dual Web Audio API + HTML5 Base64 WAV Fallback)
     let audioCtx = null;
-    let sosLoopTimer = null;
     let isAudioMuted = false;
     let isSOSPlaying = false;
+    let sosAudio = null;
+    let webAudioTimer = null;
 
-    function getAudioContext() {
+    // Generate Base64 PCM WAV file of alarming SOS siren pattern
+    function generateSOSWavDataUrl() {
+      const sampleRate = 22050;
+      const dotLen = Math.floor(sampleRate * 0.12);
+      const dashLen = Math.floor(sampleRate * 0.36);
+      const gapLen = Math.floor(sampleRate * 0.08);
+      const letterGap = Math.floor(sampleRate * 0.24);
+      const silenceEnd = Math.floor(sampleRate * 0.8);
+
+      const patternSamples = 
+        (dotLen * 3 + gapLen * 2) + letterGap +
+        (dashLen * 3 + gapLen * 2) + letterGap +
+        (dotLen * 3 + gapLen * 2) + silenceEnd;
+
+      const buffer = new Int16Array(patternSamples);
+      let offset = 0;
+
+      function writeTone(samples, freq) {
+        for (let i = 0; i < samples; i++) {
+          const t = i / sampleRate;
+          const sweep = Math.sin(t * 18) * 120;
+          const angle = 2 * Math.PI * (freq + sweep) * t;
+          let val = Math.sin(angle) > 0 ? 0.65 : -0.65; // High pitch alarming square tone
+          const envLen = Math.floor(sampleRate * 0.005);
+          if (i < envLen) val *= (i / envLen);
+          if (i > samples - envLen) val *= ((samples - i) / envLen);
+          buffer[offset++] = Math.floor(val * 28000);
+        }
+      }
+
+      function writeSilence(samples) {
+        for (let i = 0; i < samples; i++) buffer[offset++] = 0;
+      }
+
+      // S (...)
+      for (let i = 0; i < 3; i++) { writeTone(dotLen, 900); if (i < 2) writeSilence(gapLen); }
+      writeSilence(letterGap);
+      // O (---)
+      for (let i = 0; i < 3; i++) { writeTone(dashLen, 1150); if (i < 2) writeSilence(gapLen); }
+      writeSilence(letterGap);
+      // S (...)
+      for (let i = 0; i < 3; i++) { writeTone(dotLen, 900); if (i < 2) writeSilence(gapLen); }
+      writeSilence(silenceEnd);
+
+      // WAV Header
+      const dataSize = buffer.length * 2;
+      const header = new ArrayBuffer(44);
+      const view = new DataView(header);
+
+      view.setUint32(0, 0x52494646, false); // "RIFF"
+      view.setUint32(4, 36 + dataSize, true);
+      view.setUint32(8, 0x57415645, false); // "WAVE"
+      view.setUint32(12, 0x666d7420, false); // "fmt "
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true); // PCM
+      view.setUint16(22, 1, true); // Mono
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, sampleRate * 2, true);
+      view.setUint16(32, 2, true);
+      view.setUint16(34, 16, true);
+      view.setUint32(36, 0x64617461, false); // "data"
+      view.setUint32(40, dataSize, true);
+
+      const bytes = new Uint8Array(header.byteLength + buffer.byteLength);
+      bytes.set(new Uint8Array(header), 0);
+      bytes.set(new Uint8Array(buffer.buffer), header.byteLength);
+
+      let binary = '';
+      const len = bytes.byteLength;
+      for (let i = 0; i < len; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      return 'data:audio/wav;base64,' + btoa(binary);
+    }
+
+    function initAudio() {
+      if (!sosAudio) {
+        try {
+          sosAudio = new Audio(generateSOSWavDataUrl());
+          sosAudio.loop = true;
+          sosAudio.volume = 1.0;
+        } catch (e) {
+          console.error('Failed to init SOS audio element:', e);
+        }
+      }
       if (!audioCtx) {
         const AudioContextClass = window.AudioContext || window.webkitAudioContext;
         if (AudioContextClass) {
@@ -701,79 +815,67 @@
         }
       }
       if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume();
+        audioCtx.resume().catch(() => {});
       }
-      return audioCtx;
     }
 
-    function unlockAudio() {
-      getAudioContext();
-    }
-    document.addEventListener('click', unlockAudio, { once: true });
-    document.addEventListener('touchstart', unlockAudio, { once: true });
+    // Attach global user interaction listeners to unlock audio
+    ['click', 'touchstart', 'keydown'].forEach(evt => {
+      document.addEventListener(evt, () => {
+        initAudio();
+        if (isSOSPlaying && !isAudioMuted && sosAudio) {
+          sosAudio.play().then(() => {
+            document.getElementById('audio-unlock-banner').classList.add('hidden');
+          }).catch(() => {});
+        }
+      }, { passive: true });
+    });
 
-    function playBeep(ctx, frequency, durationMs, startTime) {
-      if (isAudioMuted || !ctx) return;
+    function playSingleBeep(frequency, durationMs) {
+      if (isAudioMuted) return;
+      initAudio();
+      if (!audioCtx) return;
 
       try {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.value = frequency;
 
-        osc.type = 'sawtooth'; // Piercing alarming waveform
-
-        // Pitch modulation for siren sound
-        osc.frequency.setValueAtTime(frequency, startTime);
-        osc.frequency.exponentialRampToValueAtTime(frequency * 1.25, startTime + (durationMs / 1000));
-
-        // Volume envelope
-        gain.gain.setValueAtTime(0.001, startTime);
-        gain.gain.linearRampToValueAtTime(0.4, startTime + 0.01);
-        gain.gain.setValueAtTime(0.4, startTime + (durationMs / 1000) - 0.01);
-        gain.gain.linearRampToValueAtTime(0.001, startTime + (durationMs / 1000));
+        gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + (durationMs / 1000));
 
         osc.connect(gain);
-        gain.connect(ctx.destination);
+        gain.connect(audioCtx.destination);
 
-        osc.start(startTime);
-        osc.stop(startTime + (durationMs / 1000));
-      } catch (e) {
-        console.error('Audio play error:', e);
-      }
+        osc.start();
+        osc.stop(audioCtx.currentTime + (durationMs / 1000));
+      } catch (e) {}
     }
 
-    function playSOSSequence() {
-      const ctx = getAudioContext();
-      if (!ctx || isAudioMuted) return;
+    function playWebAudioSOSPattern() {
+      if (!isSOSPlaying || isAudioMuted) return;
+      const dot = 120, dash = 360, gap = 80, letter = 240;
+      let delay = 0;
 
-      const now = ctx.currentTime + 0.05;
-      const dotDuration = 0.12;   // 120ms short dot
-      const dashDuration = 0.36;  // 360ms long dash
-      const intraGap = 0.08;      // gap inside letter
-      const letterGap = 0.22;     // gap between letters
-      const alarmFreq = 880;      // 880Hz emergency pitch
-
-      let time = now;
-
-      // 1. S (...): 3 dots
+      // S (...)
       for (let i = 0; i < 3; i++) {
-        playBeep(ctx, alarmFreq, dotDuration * 1000, time);
-        time += dotDuration + intraGap;
+        setTimeout(() => playSingleBeep(900, dot), delay);
+        delay += dot + gap;
       }
+      delay += letter;
 
-      time += letterGap;
-
-      // 2. O (---): 3 dashes with higher urgency pitch
+      // O (---)
       for (let i = 0; i < 3; i++) {
-        playBeep(ctx, alarmFreq * 1.15, dashDuration * 1000, time);
-        time += dashDuration + intraGap;
+        setTimeout(() => playSingleBeep(1150, dash), delay);
+        delay += dash + gap;
       }
+      delay += letter;
 
-      time += letterGap;
-
-      // 3. S (...): 3 dots
+      // S (...)
       for (let i = 0; i < 3; i++) {
-        playBeep(ctx, alarmFreq, dotDuration * 1000, time);
-        time += dotDuration + intraGap;
+        setTimeout(() => playSingleBeep(900, dot), delay);
+        delay += dot + gap;
       }
     }
 
@@ -782,23 +884,40 @@
       isSOSPlaying = true;
       updateSoundUI();
 
-      getAudioContext();
-      playSOSSequence();
+      initAudio();
 
-      if (sosLoopTimer) clearInterval(sosLoopTimer);
-      sosLoopTimer = setInterval(() => {
+      // 1. Play HTML5 Audio element
+      if (sosAudio && !isAudioMuted) {
+        sosAudio.currentTime = 0;
+        sosAudio.play().then(() => {
+          document.getElementById('audio-unlock-banner').classList.add('hidden');
+        }).catch(err => {
+          console.warn('Audio playback waiting for tap:', err);
+          document.getElementById('audio-unlock-banner').classList.remove('hidden');
+        });
+      }
+
+      // 2. Play Web Audio pattern loop
+      playWebAudioSOSPattern();
+      if (webAudioTimer) clearInterval(webAudioTimer);
+      webAudioTimer = setInterval(() => {
         if (isSOSPlaying && !isAudioMuted) {
-          playSOSSequence();
+          playWebAudioSOSPattern();
         }
       }, 2800);
     }
 
     function stopSOSAlarm() {
       isSOSPlaying = false;
-      if (sosLoopTimer) {
-        clearInterval(sosLoopTimer);
-        sosLoopTimer = null;
+      if (sosAudio) {
+        sosAudio.pause();
+        sosAudio.currentTime = 0;
       }
+      if (webAudioTimer) {
+        clearInterval(webAudioTimer);
+        webAudioTimer = null;
+      }
+      document.getElementById('audio-unlock-banner').classList.add('hidden');
       updateSoundUI();
     }
 
@@ -808,6 +927,28 @@
         stopSOSAlarm();
       } else {
         updateSoundUI();
+      }
+    }
+
+    function testSirenSound() {
+      isAudioMuted = false;
+      initAudio();
+      startSOSAlarm();
+      setTimeout(() => {
+        if (confirm('Did you hear the SOS Siren? Click OK to stop test sound.')) {
+          stopSOSAlarm();
+        } else {
+          stopSOSAlarm();
+        }
+      }, 3000);
+    }
+
+    function unlockAudioAndPlay() {
+      initAudio();
+      if (isSOSPlaying && sosAudio) {
+        sosAudio.play().then(() => {
+          document.getElementById('audio-unlock-banner').classList.add('hidden');
+        }).catch(() => {});
       }
     }
 
@@ -821,6 +962,7 @@
 
     // Check stored state on initialization
     window.addEventListener('DOMContentLoaded', () => {
+      initAudio();
       const stored = localStorage.getItem('lantern_circle');
       if (stored) {
         try {
