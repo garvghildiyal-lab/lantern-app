@@ -649,7 +649,7 @@
 
         container.innerHTML = signals.map(s => {
           const isAck = s.status === 'acknowledged';
-          const time = new Date(s.created_at + ' UTC').toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          const time = formatSignalTime(s.created_at);
 
           return `
             <div class="signal-item ${isAck ? 'acknowledged' : ''}">
@@ -668,6 +668,18 @@
         }).join('');
       } catch (err) {
         console.error('Error loading signals:', err);
+      }
+    }
+
+    function formatSignalTime(dateStr) {
+      if (!dateStr) return '';
+      try {
+        const iso = dateStr.includes('T') ? dateStr : dateStr.replace(' ', 'T') + 'Z';
+        const d = new Date(iso);
+        if (isNaN(d.getTime())) return dateStr;
+        return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      } catch (e) {
+        return dateStr;
       }
     }
 

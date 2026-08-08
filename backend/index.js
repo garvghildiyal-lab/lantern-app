@@ -134,6 +134,9 @@ app.post('/api/signals', (req, res) => {
     );
     const result = insertSignal.run(circle_id, sender_name.trim(), 'active');
     const signal = db.prepare('SELECT * FROM signals WHERE id = ?').get(result.lastInsertRowid);
+    const totalCount = db.prepare('SELECT COUNT(*) as count FROM signals').get().count;
+
+    console.log(`[SQL PERSISTENCE] Signal ID #${signal.id} saved to SQLite DB for Circle #${circle_id} by "${sender_name.trim()}". Total signals in DB: ${totalCount}`);
 
     // Broadcast "signal:new" event to room `circle:{circle_id}`
     io.to(`circle:${circle_id}`).emit('signal:new', signal);
@@ -168,6 +171,8 @@ app.post('/api/signals/:id/acknowledge', (req, res) => {
 
     const updatedSignal = db.prepare('SELECT * FROM signals WHERE id = ?').get(id);
 
+    console.log(`[SQL UPDATE] Signal ID #${id} acknowledged in SQLite DB by "${acknowledged_by.trim()}"`);
+
     // Broadcast "signal:acknowledged" event to room `circle:{circle_id}`
     io.to(`circle:${updatedSignal.circle_id}`).emit('signal:acknowledged', updatedSignal);
 
@@ -188,7 +193,8 @@ app.get('/api/circles/:id/signals', (req, res) => {
       return res.status(404).json({ error: 'Circle not found' });
     }
 
-    const signals = db.prepare('SELECT * FROM signals WHERE circle_id = ? ORDER BY created_at DESC LIMIT 50').all(id);
+    const signals = db.prepare('SELECT * FROM signals WHERE circle_id = ? ORDER BY created_at DESC, id DESC LIMIT 50').all(id);
+    console.log(`[SQL QUERY] GET /api/circles/${id}/signals returning ${signals.length} signals from SQLite DB`);
     res.json(signals);
   } catch (err) {
     console.error('Error fetching signals:', err);
