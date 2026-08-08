@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "main": "backend/index.js",
   "scripts": {
-    "start": "node backend/index.js"
+    "start": "node backend/index.js",
+    "start:python": "python backend/server.py",
+    "test:python": "python backend/test_lantern.py"
   },
   "dependencies": {
     "better-sqlite3": "^11.8.1",
